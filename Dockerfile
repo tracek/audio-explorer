@@ -1,4 +1,4 @@
-FROM continuumio/miniconda3:4.5.4
+FROM continuumio/miniconda3:4.5.11
 RUN conda install -c conda-forge --quiet --yes \
     Python=3.6.8 \
     dash=0.37.0 \
