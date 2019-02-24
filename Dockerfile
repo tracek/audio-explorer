@@ -1,4 +1,4 @@
-FROM continuumio/anaconda3:2018.12
+FROM continuumio/miniconda3:4.5.12
 COPY . /app
 WORKDIR /app
 RUN conda install -c conda-forge --quiet --yes \
@@ -13,6 +13,9 @@ RUN conda install -c conda-forge --quiet --yes \
     librosa=0.6.3 \
     pandas=0.24.1 \
     numpy=1.16.1 \
+    joblib=0.13.2 \
+    matplotlib=3.0.2 \
+    scikit-learn=0.20.2 \
     scipy=1.2.1 \
     boto3=1.9.101
 
