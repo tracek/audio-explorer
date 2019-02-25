@@ -1,8 +1,14 @@
 import os
+import base64
+import boto3
 import dash
 import dash_audio_components
 import dash_core_components as dcc
 import dash_html_components as html
+from datetime import datetime
+from flask import request
+from dash.dependencies import Input, Output, State
+from settings import S3_BUCKET
 
 external_stylesheets = ['https://codepen.io/chriddyp/pen/bWLwgP.css']
 
@@ -80,6 +86,50 @@ app.layout = html.Div(
         )
     ]
 )
+
+
+def copy_b64_to_bucket(decoded_b64, filename, content_type):
+    s3 = boto3.resource('s3')
+    remote_ip = str(request.remote_addr)
+    time_now = datetime.now().strftime("%Y-%m-%d_%H:%M:%S")
+    filename, ext = os.path.splitext(filename)
+    key = f'audioexplorer/{filename}_{time_now}_{remote_ip}.{ext}'
+    obj = s3.Object(S3_BUCKET, key)
+    obj.put(Body=decoded_b64, ContentType=content_type)
+
+
+@app.callback(Output('embedding-graph', 'children'),
+              [Input('upload-data', 'contents')],
+              [State('upload-data', 'filename'),
+               State('upload-data', 'last_modified')])
+def update_figure(contents, filename, last_modified):
+    if contents is not None:
+        content_type, content_string = contents.split(',')
+        decoded = base64.b64decode(content_string)
+
+        copy_b64_to_bucket(decoded, filename, content_type)
+
+        # features = get_features_from_file(BytesIO(decoded), n_jobs=1)
+        # embeddings = get_embeddings(features, type='tsne', perplexity=60)
+        # figure = visualize.make_scatterplot(x=embeddings[:, 0],
+        #                                     y=embeddings[:, 1])
+        mock = [
+                {'x': [1, 2, 3], 'y': [4, 1, 2], 'type': 'bar', 'name': 'SF'},
+                {'x': [1, 2, 3], 'y': [2, 4, 5], 'type': 'bar', 'name': u'Montréal'},
+            ]
+        return html.Div([
+            dcc.Graph(
+                id='example-graph',
+                figure={
+                    'data': mock,
+                    'layout': {
+                        'title': filename
+                    }
+                },
+                style={'height': '80vh'}
+            )
+        ])
+
 
 
 if __name__ == '__main__':
