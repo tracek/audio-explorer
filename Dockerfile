@@ -17,6 +17,7 @@ RUN conda install -c conda-forge --quiet --yes \
     scipy=1.2.1 \
     boto3=1.9.101
 
+RUN pip install --no-cache-dir dash_audio_components
 COPY . /app
 WORKDIR /app
 EXPOSE 8080
