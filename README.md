@@ -18,6 +18,15 @@ Install AWS CLI for EB: `pip install awsebcli`
 
 Prcedure:
  
- * `eb init`
- * `eb create`
+ * Initialise the environment: `eb init`
+ * Create and deploy new instance of type: `eb create -i [type]`
  * `eb deploy`
+
+
+### Troubleshooting
+
+Problem: Elastic Beanstalk deployment via Docker fails due thin pool getting full.
+
+Solution: 
+* Use EC2 that has a drive with sufficient space (mind most of EC2 uses EBS volumes)
+* Follow instructions from [Server Fault](https://serverfault.com/questions/840937/aws-elasticbeanstalk-docker-thin-pool-getting-full-and-causing-re-mount-of-files)
