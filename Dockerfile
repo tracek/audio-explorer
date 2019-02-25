@@ -15,7 +15,8 @@ RUN conda install -c conda-forge --quiet --yes \
     matplotlib=3.0.2 \
     scikit-learn=0.20.2 \
     scipy=1.2.1 \
-    boto3=1.9.101
+    boto3=1.9.101 \
+    umap-learn=0.3.7
 
 RUN pip install --no-cache-dir dash_audio_components
 COPY . /app

@@ -5,10 +5,16 @@ import dash
 import dash_audio_components
 import dash_core_components as dcc
 import dash_html_components as html
+from io import BytesIO
 from datetime import datetime
 from flask import request
 from dash.dependencies import Input, Output, State
+
 from settings import S3_BUCKET
+from audioexplorer.feature_extractor import get_features_from_file
+from audioexplorer.embedding import get_embeddings
+from audioexplorer.visualize import make_scatterplot
+
 
 external_stylesheets = ['https://codepen.io/chriddyp/pen/bWLwgP.css']
 
@@ -109,7 +115,7 @@ def update_figure(contents, filename, last_modified):
 
         copy_b64_to_bucket(decoded, filename, content_type)
 
-        # features = get_features_from_file(BytesIO(decoded), n_jobs=1)
+        features = get_features_from_file(BytesIO(decoded), n_jobs=1)
         # embeddings = get_embeddings(features, type='tsne', perplexity=60)
         # figure = visualize.make_scatterplot(x=embeddings[:, 0],
         #                                     y=embeddings[:, 1])
