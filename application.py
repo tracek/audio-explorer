@@ -116,22 +116,13 @@ def update_figure(contents, filename, last_modified):
         copy_b64_to_bucket(decoded, filename, content_type)
 
         features = get_features_from_file(BytesIO(decoded), n_jobs=1)
-        # embeddings = get_embeddings(features, type='tsne', perplexity=60)
-        # figure = visualize.make_scatterplot(x=embeddings[:, 0],
-        #                                     y=embeddings[:, 1])
-        mock = [
-                {'x': [1, 2, 3], 'y': [4, 1, 2], 'type': 'bar', 'name': 'SF'},
-                {'x': [1, 2, 3], 'y': [2, 4, 5], 'type': 'bar', 'name': u'Montréal'},
-            ]
+        embeddings = get_embeddings(features, type='tsne', perplexity=60)
+        figure = make_scatterplot(x=embeddings[:, 0], y=embeddings[:, 1])
+
         return html.Div([
             dcc.Graph(
                 id='example-graph',
-                figure={
-                    'data': mock,
-                    'layout': {
-                        'title': filename
-                    }
-                },
+                figure=figure,
                 style={'height': '80vh'}
             )
         ])
