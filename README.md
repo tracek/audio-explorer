@@ -4,7 +4,7 @@ Work in progress. Much of the notes below are just download from my head without
 
 ### Useful commands
 
-Build docker image: `docker image build [path]`
+Build docker image: `docker image build [path] user/name:latest`
 
 Pull and run miniconda:
 ```
@@ -20,7 +20,7 @@ Prcedure:
  
  * Initialise the environment: `eb init`
  * Create and deploy new instance of type: `eb create -i [type]`
- * `eb deploy`
+ * Deploy `eb deploy`
 
 
 ### Troubleshooting

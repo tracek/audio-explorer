@@ -3,6 +3,7 @@ import base64
 import boto3
 import dash
 import dash_audio_components
+import dash_resumable_upload
 import dash_core_components as dcc
 import dash_html_components as html
 from io import BytesIO
@@ -19,11 +20,23 @@ from audioexplorer.visualize import make_scatterplot
 external_stylesheets = ['https://codepen.io/chriddyp/pen/bWLwgP.css']
 
 app = dash.Dash(__name__, external_stylesheets=external_stylesheets)
+dash_resumable_upload.decorate_server(app.server, "uploads")
 application = app.server
 
 
 with open('app_description.md', 'r') as file:
     description_md = file.read()
+
+upload_style = {
+    'width': '75%',
+    'height': '60px',
+    'lineHeight': '60px',
+    'borderWidth': '1px',
+    'borderStyle': 'dashed',
+    'borderRadius': '5px',
+    'textAlign': 'center',
+    'margin': '30px auto'
+}
 
 
 app.layout = html.Div(
@@ -45,25 +58,21 @@ app.layout = html.Div(
                     'margin': '30px auto',
                 }
             ),
-            dcc.Upload(
+            dash_resumable_upload.Upload(
                 id='upload-data',
-                children=html.Div([
-                    'To start, Drag and Drop audio or ',
-                    html.A('Select Files')
-                ]),
-                style={
-                    'width': '75%',
-                    'height': '60px',
-                    'lineHeight': '60px',
-                    'borderWidth': '1px',
-                    'borderStyle': 'dashed',
-                    'borderRadius': '5px',
-                    'textAlign': 'center',
-                    'margin': '30px auto'
-                },
-                # Allow multiple files to be uploaded
-                multiple=False
+                maxFiles=1,
+                maxFileSize=5 * 1024 * 1024 * 1000,  # 500 MB
+                service="/upload_resumable",
+                textLabel="Drag and Drop Here to upload!",
+                startButton=False,
+                pauseButton=False,
+                cancelButton=False,
+                defaultStyle=upload_style,
+                activeStyle=upload_style,
+                completeStyle=upload_style
             ),
+            html.Div(id='compid'),
+            html.Div(id='upload-output'),
         ]),
 
         # Body
@@ -104,28 +113,12 @@ def copy_b64_to_bucket(decoded_b64, filename, content_type):
     obj.put(Body=decoded_b64, ContentType=content_type)
 
 
-@app.callback(Output('embedding-graph', 'children'),
-              [Input('upload-data', 'contents')],
-              [State('upload-data', 'filename'),
-               State('upload-data', 'last_modified')])
-def update_figure(contents, filename, last_modified):
-    if contents is not None:
-        content_type, content_string = contents.split(',')
-        decoded = base64.b64decode(content_string)
-
-        copy_b64_to_bucket(decoded, filename, content_type)
-
-        features = get_features_from_file(BytesIO(decoded), n_jobs=1)
-        embeddings = get_embeddings(features, type='tsne', perplexity=60)
-        figure = make_scatterplot(x=embeddings[:, 0], y=embeddings[:, 1])
-
-        return html.Div([
-            dcc.Graph(
-                id='example-graph',
-                figure=figure,
-                style={'height': '80vh'}
-            )
-        ])
+@app.callback(Output('upload-output', 'children'),
+              [Input('upload-data', 'fileNames')])
+def display_files(fileNames):
+    if fileNames is not None:
+        return html.Ul([html.Li(
+            html.Img(height="50", width="100", src=x)) for x in fileNames])
 
 
 

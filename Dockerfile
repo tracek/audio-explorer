@@ -18,7 +18,7 @@ RUN conda install -c conda-forge --quiet --yes \
     boto3=1.9.101 \
     umap-learn=0.3.7
 
-RUN pip install --no-cache-dir dash_audio_components
+RUN pip install --no-cache-dir dash_audio_components dash_resumable_upload
 COPY . /app
 WORKDIR /app
 EXPOSE 8080
