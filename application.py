@@ -61,6 +61,7 @@ app.layout = html.Div(
             dash_resumable_upload.Upload(
                 id='upload-data',
                 maxFiles=1,
+                simultaneuosUploads=4,
                 maxFileSize=5 * 1024 * 1024 * 1000,  # 500 MB
                 service="/upload_resumable",
                 textLabel="Drag and Drop Here to upload!",
