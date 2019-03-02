@@ -1,8 +1,6 @@
 import numpy as np
-import pandas as pd
 from sklearn.preprocessing import StandardScaler
 from sklearn import manifold
-from sklearn import decomposition
 
 
 def get_embeddings(data: np.ndarray, type='tsne', **kwargs) -> np.ndarray:
