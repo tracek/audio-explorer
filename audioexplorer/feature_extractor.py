@@ -3,7 +3,6 @@ import pandas as pd
 from joblib import Parallel, delayed
 from audioexplorer import specprop
 from audioexplorer.onsets import OnsetDetector
-from audioexplorer.audio_io import read_wave_local
 from audioexplorer.filters import frequency_filter
 from audioexplorer.yaafe_wrapper import YaafeWrapper
 
@@ -47,20 +46,19 @@ def split_audio_into_chunks_by_onsets(X: np.ndarray, fs: int, onsets: np.ndarray
     return samples
 
 
-def get_features_from_file(path,
-                           n_jobs: int = 1,
-                           block_size = 512,
-                           step_size = None,
-                           onset_detector_type = 'hfc',
-                           onset_threshold = 0.01,
-                           onset_silence_threshold = -90,
-                           min_duration_s = 0.15,
-                           sample_len = 0.2,
-                           lowcut=500,
-                           highcut=6000):
+def get_features_from_ndarray(X, fs,
+                              n_jobs: int = 1,
+                              block_size = 512,
+                              step_size = None,
+                              onset_detector_type = 'hfc',
+                              onset_threshold = 0.01,
+                              onset_silence_threshold = -90,
+                              min_duration_s = 0.15,
+                              sample_len = 0.2,
+                              lowcut=500,
+                              highcut=6000):
     if not step_size:
         step_size = block_size // 2
-    fs, X = read_wave_local(path)
     X = frequency_filter(X, fs, lowcut=lowcut, highcut=highcut)
     onset_detector = OnsetDetector(fs, nfft=block_size, hop=step_size,
                                    onset_detector_type=onset_detector_type,
