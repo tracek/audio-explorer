@@ -1,12 +1,10 @@
 import os
-import base64
 import boto3
 import dash
 import dash_audio_components
 import dash_resumable_upload
 import dash_core_components as dcc
 import dash_html_components as html
-from io import BytesIO
 from datetime import datetime
 from flask import request
 from dash.dependencies import Input, Output, State
