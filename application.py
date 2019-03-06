@@ -77,6 +77,7 @@ app.layout = html.Div(
         # Body
         html.Div(className="row", children=[
             html.Div(className="eight columns", children=[
+                html.Div(id='upload-completed'),
                 html.Div(id='embedding-graph'),
                 dash_audio_components.DashAudioComponents(
                     id='audio-player',
@@ -123,9 +124,19 @@ def copy_b64_to_bucket(decoded_b64, filename, content_type):
     obj.put(Body=decoded_b64, ContentType=content_type)
 
 
-@app.callback(Output('upload-output', 'children'),
+@app.callback(Output('upload-completed', 'children'),
               [Input('upload-data', 'fileNames')])
-def display_files(filenames):
+def plot_embeddings(filenames):
+    if filenames is not None:
+        filepath = 'uploads/' + filenames[-1]
+        copy_file_to_bucket(filepath)
+
+        return html.Label('Completed!')
+
+
+@app.callback(Output('embedding-graph', 'children'),
+              [Input('upload-data', 'fileNames')])
+def plot_embeddings(filenames):
     if filenames is not None:
         filepath = 'uploads/' + filenames[-1]
         fs, X = read_wave_local(filepath)
@@ -141,6 +152,7 @@ def display_files(filenames):
                 style={'height': '80vh'}
             )
         ])
+
 
 
 if __name__ == '__main__':
