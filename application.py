@@ -1,13 +1,16 @@
 import os
 import boto3
+import json
+import pandas as pd
 import dash
 import dash_audio_components
 import dash_resumable_upload
 import dash_core_components as dcc
 import dash_html_components as html
 from datetime import datetime
+from collections import namedtuple
 from flask import request
-from dash.dependencies import Input, Output, State
+from dash.dependencies import Input, Output
 
 from settings import S3_BUCKET
 from audioexplorer.audio_io import read_wave_local
@@ -21,6 +24,8 @@ external_stylesheets = ['https://codepen.io/chriddyp/pen/bWLwgP.css']
 app = dash.Dash(__name__, external_stylesheets=external_stylesheets)
 dash_resumable_upload.decorate_server(app.server, "uploads")
 application = app.server
+
+Sample = namedtuple('Sample', ['path', 'start', 'end'])
 
 
 with open('app_description.md', 'r') as file:
@@ -77,7 +82,6 @@ app.layout = html.Div(
         # Body
         html.Div(className="row", children=[
             html.Div(className="eight columns", children=[
-                html.Div(id='upload-completed'),
                 html.Div(id='embedding-graph'),
                 dash_audio_components.DashAudioComponents(
                     id='audio-player',
@@ -86,6 +90,9 @@ app.layout = html.Div(
                     autoPlay=True,
                     controls=False
                 )
+            ]),
+            html.Div(className="four columns", children=[
+                html.Div(id='upload-completed'),
             ]),
         ]),
 
@@ -124,6 +131,19 @@ def copy_b64_to_bucket(decoded_b64, filename, content_type):
     obj.put(Body=decoded_b64, ContentType=content_type)
 
 
+# def store_df(df: pd.DataFrame):
+#     df.to_json()
+#
+#
+# def get_sample_from_pointclick(click) -> Sample:
+#     idx = click['points'][0]['pointIndex']
+#     data = df.iloc[idx]
+#     sample = Sample(path='data/raw/' + data['sound.files'],
+#                     start=data['start'],
+#                     end=data['end'])
+#     return sample
+
+
 @app.callback(Output('upload-completed', 'children'),
               [Input('upload-data', 'fileNames')])
 def plot_embeddings(filenames):
@@ -134,24 +154,41 @@ def plot_embeddings(filenames):
         return html.Label('Completed!')
 
 
+
+
 @app.callback(Output('embedding-graph', 'children'),
               [Input('upload-data', 'fileNames')])
 def plot_embeddings(filenames):
     if filenames is not None:
         filepath = 'uploads/' + filenames[-1]
         fs, X = read_wave_local(filepath)
-        copy_file_to_bucket(filepath)
         features = get_features_from_ndarray(X, fs, n_jobs=1)
-        embeddings = get_embeddings(features, type='tsne', perplexity=60)
-        figure = make_scatterplot(x=embeddings[:, 0], y=embeddings[:, 1])
+        features_for_emb = features.drop(columns=['onsets', 'offset'])
+        embeddings = get_embeddings(features_for_emb, type='tsne', perplexity=60)
+        features.insert(0, column='filename', value=filenames[-1])
+        figure = make_scatterplot(x=embeddings[:, 0], y=embeddings[:, 1], customdata=features.values)
 
-        return html.Div([
+        graph = html.Div([
             dcc.Graph(
                 id='example-graph',
                 figure=figure,
                 style={'height': '80vh'}
             )
         ])
+
+        return graph
+
+
+# @app.callback(Output('audio-player', 'overrideProps'),
+#               [Input('storm-petrel-embedding', 'clickData')])
+# def update_player_status(click_data):
+#     if click_data:
+#         sample = get_sample_from_pointclick(click_data)
+#         audio_path = S3_STREAMED_PREFIX + sample.path
+#         return {'autoPlay': True,
+#                 'src': audio_path,
+#                 'from_position': sample.start,
+#                 'to_position': sample.end + EXTRA_SOUND_DURATION}
 
 
 

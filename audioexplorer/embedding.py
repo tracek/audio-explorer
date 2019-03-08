@@ -3,7 +3,7 @@ from sklearn.preprocessing import StandardScaler
 from sklearn import manifold
 
 
-def get_embeddings(data: np.ndarray, type='tsne', **kwargs) -> np.ndarray:
+def get_embeddings(data, type='tsne', **kwargs) -> np.ndarray:
     data = StandardScaler().fit_transform(data)
     if type == 'tsne':
         perplexity = kwargs.get('perplexity', 80)

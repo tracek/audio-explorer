@@ -24,7 +24,7 @@ def test_scatter() -> go.Figure:
     return fig
 
 
-def make_scatterplot(x, y) -> go.Figure:
+def make_scatterplot(x, y, customdata=None) -> go.Figure:
 
     trace0 = go.Scatter(
         x=x,
@@ -33,7 +33,8 @@ def make_scatterplot(x, y) -> go.Figure:
         marker=dict(
             size=4,
             color='red',
-            opacity=0.8)
+            opacity=0.8),
+        customdata=customdata
     )
 
     layout = go.Layout(
