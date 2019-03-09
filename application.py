@@ -53,7 +53,7 @@ app.layout = html.Div(
         'padding': '10px 30px'
     },
     children=[
-        dcc.Store(id='filename-store', storage_type='memory'),
+        dcc.Store(id='signed-url-store', storage_type='memory'),
         html.Div(className="row", children=[
             html.H2(
                 'Audio Explorer pre-alpha',
@@ -118,7 +118,13 @@ def copy_file_to_bucket(filepath_input, key):
         bucket.upload_fileobj(data, key, ExtraArgs={'ContentType': 'audio/wav'})
 
 
-@app.callback(Output('filename-store', 'data'),
+def generate_signed_url(key):
+    s3_client = boto3.client('s3')
+    url = s3_client.generate_presigned_url('get_object', Params={'Bucket': S3_BUCKET, 'Key': key}, ExpiresIn=3600)
+    return url
+
+
+@app.callback(Output('signed-url-store', 'data'),
               [Input('upload-data', 'fileNames')])
 def plot_embeddings(filenames):
     if filenames is not None:
@@ -128,7 +134,8 @@ def plot_embeddings(filenames):
         filename, ext = os.path.splitext(os.path.basename(filepath))
         key = f'{filename}_{time_now}_{remote_ip}.{ext}'
         copy_file_to_bucket(filepath, key)
-        return key
+        url = generate_signed_url(key)
+        return url
 
 
 @app.callback(Output('embedding-graph', 'children'),
@@ -157,13 +164,12 @@ def plot_embeddings(filenames):
 
 @app.callback(Output('audio-player', 'overrideProps'),
               [Input('graph', 'clickData'),
-               Input('filename-store', 'data')])
-def update_player_status(click_data, filename):
+               Input('signed-url-store', 'data')])
+def update_player_status(click_data, signed_url):
     if click_data:
         start, end = click_data['points'][0]['customdata']
-        audio_path = S3_STREAMED + filename
         return {'autoPlay': True,
-                'src': audio_path,
+                'src': signed_url,
                 'from_position': start - 0.4,
                 'to_position': end + 0.4}
 
