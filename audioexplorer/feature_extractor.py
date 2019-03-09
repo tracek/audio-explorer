@@ -75,7 +75,7 @@ def get_features_from_ndarray(X, fs,
         features = pd.concat(features)
 
     features.insert(0, column='offset', value=onsets + sample_len)
-    features.insert(0, column='onsets', value=onsets)
+    features.insert(0, column='onset', value=onsets)
     features = features.reset_index(drop=True)
     return features
 

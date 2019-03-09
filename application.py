@@ -12,7 +12,7 @@ from collections import namedtuple
 from flask import request
 from dash.dependencies import Input, Output
 
-from settings import S3_BUCKET
+from settings import S3_BUCKET, S3_STREAMED
 from audioexplorer.audio_io import read_wave_local
 from audioexplorer.feature_extractor import get_features_from_ndarray
 from audioexplorer.embedding import get_embeddings
@@ -22,6 +22,7 @@ from audioexplorer.visualize import make_scatterplot
 external_stylesheets = ['https://codepen.io/chriddyp/pen/bWLwgP.css']
 
 app = dash.Dash(__name__, external_stylesheets=external_stylesheets)
+app.config['suppress_callback_exceptions'] = True
 dash_resumable_upload.decorate_server(app.server, "uploads")
 application = app.server
 
@@ -52,7 +53,7 @@ app.layout = html.Div(
         'padding': '10px 30px'
     },
     children=[
-        # Header
+        dcc.Store(id='filename-store', storage_type='memory'),
         html.Div(className="row", children=[
             html.H2(
                 'Audio Explorer pre-alpha',
@@ -88,7 +89,7 @@ app.layout = html.Div(
                     style={'width': '90%'},
                     src='',
                     autoPlay=True,
-                    controls=False
+                    controls=True
                 )
             ]),
             html.Div(className="four columns", children=[
@@ -110,50 +111,24 @@ app.layout = html.Div(
 )
 
 
-def copy_file_to_bucket(filepath_input):
-    remote_ip = str(request.remote_addr)
-    time_now = datetime.now().strftime("%Y-%m-%d_%H:%M:%S")
-    filename, ext = os.path.splitext(os.path.basename(filepath_input))
-    key = f'{filename}_{time_now}_{remote_ip}.{ext}'
+def copy_file_to_bucket(filepath_input, key):
     s3 = boto3.resource('s3')
     bucket = s3.Bucket('audioexplorer')
     with open(filepath_input, 'rb') as data:
-        bucket.upload_fileobj(data, key)
+        bucket.upload_fileobj(data, key, ExtraArgs={'ContentType': 'audio/wav'})
 
 
-def copy_b64_to_bucket(decoded_b64, filename, content_type):
-    s3 = boto3.resource('s3')
-    remote_ip = str(request.remote_addr)
-    time_now = datetime.now().strftime("%Y-%m-%d_%H:%M:%S")
-    filename, ext = os.path.splitext(filename)
-    key = f'audioexplorer/{filename}_{time_now}_{remote_ip}.{ext}'
-    obj = s3.Object(S3_BUCKET, key)
-    obj.put(Body=decoded_b64, ContentType=content_type)
-
-
-# def store_df(df: pd.DataFrame):
-#     df.to_json()
-#
-#
-# def get_sample_from_pointclick(click) -> Sample:
-#     idx = click['points'][0]['pointIndex']
-#     data = df.iloc[idx]
-#     sample = Sample(path='data/raw/' + data['sound.files'],
-#                     start=data['start'],
-#                     end=data['end'])
-#     return sample
-
-
-@app.callback(Output('upload-completed', 'children'),
+@app.callback(Output('filename-store', 'data'),
               [Input('upload-data', 'fileNames')])
 def plot_embeddings(filenames):
     if filenames is not None:
         filepath = 'uploads/' + filenames[-1]
-        copy_file_to_bucket(filepath)
-
-        return html.Label('Completed!')
-
-
+        remote_ip = str(request.remote_addr)
+        time_now = datetime.now().strftime("%Y-%m-%d_%H:%M:%S")
+        filename, ext = os.path.splitext(os.path.basename(filepath))
+        key = f'{filename}_{time_now}_{remote_ip}.{ext}'
+        copy_file_to_bucket(filepath, key)
+        return key
 
 
 @app.callback(Output('embedding-graph', 'children'),
@@ -163,14 +138,15 @@ def plot_embeddings(filenames):
         filepath = 'uploads/' + filenames[-1]
         fs, X = read_wave_local(filepath)
         features = get_features_from_ndarray(X, fs, n_jobs=1)
-        features_for_emb = features.drop(columns=['onsets', 'offset'])
+        features_for_emb = features.drop(columns=['onset', 'offset'])
         embeddings = get_embeddings(features_for_emb, type='tsne', perplexity=60)
         features.insert(0, column='filename', value=filenames[-1])
-        figure = make_scatterplot(x=embeddings[:, 0], y=embeddings[:, 1], customdata=features.values)
+        extra_data = ['onset', 'offset']
+        figure = make_scatterplot(x=embeddings[:, 0], y=embeddings[:, 1], customdata=features[extra_data])
 
         graph = html.Div([
             dcc.Graph(
-                id='example-graph',
+                id='graph',
                 figure=figure,
                 style={'height': '80vh'}
             )
@@ -179,16 +155,17 @@ def plot_embeddings(filenames):
         return graph
 
 
-# @app.callback(Output('audio-player', 'overrideProps'),
-#               [Input('storm-petrel-embedding', 'clickData')])
-# def update_player_status(click_data):
-#     if click_data:
-#         sample = get_sample_from_pointclick(click_data)
-#         audio_path = S3_STREAMED_PREFIX + sample.path
-#         return {'autoPlay': True,
-#                 'src': audio_path,
-#                 'from_position': sample.start,
-#                 'to_position': sample.end + EXTRA_SOUND_DURATION}
+@app.callback(Output('audio-player', 'overrideProps'),
+              [Input('graph', 'clickData'),
+               Input('filename-store', 'data')])
+def update_player_status(click_data, filename):
+    if click_data:
+        start, end = click_data['points'][0]['customdata']
+        audio_path = S3_STREAMED + filename
+        return {'autoPlay': True,
+                'src': audio_path,
+                'from_position': start - 0.4,
+                'to_position': end + 0.4}
 
 
 
