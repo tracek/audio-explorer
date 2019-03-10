@@ -120,7 +120,7 @@ def copy_file_to_bucket(filepath_input, key):
 
 
 def generate_signed_url(key):
-    s3_client = boto3.client('s3', config=Config(signature_version='s3v4'))
+    s3_client = boto3.client('s3', region_name='eu-central-1', config=Config(signature_version='s3v4'))
     url = s3_client.generate_presigned_url('get_object', Params={'Bucket': S3_BUCKET, 'Key': key}, ExpiresIn=3600)
     return url
 
