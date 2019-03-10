@@ -95,7 +95,7 @@ def make_scatterplot_with_labels(x, y, labels=None, text='', title='') -> go.Fig
 
 def specgram_base64(signal: np.ndarray, fs: int, start: int, end: int) -> str:
     f, ax = plt.subplots()
-    xticks = np.linspace(start, end, 6).round(1)
+    xticks = np.linspace(start, end, 8).round(2)
     ax.set_xticklabels(xticks)
     plt.specgram(signal, Fs=fs)
     plt.xlabel('Time [s]')

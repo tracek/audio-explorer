@@ -8,13 +8,14 @@ import dash_html_components as html
 from datetime import datetime
 from flask import request
 from dash.dependencies import Input, Output
+from dash.exceptions import PreventUpdate
 from botocore.client import Config
 
 from settings import S3_BUCKET
-from audioexplorer.audio_io import read_wave_local
+from audioexplorer.audio_io import read_wave_local, read_wave_part_from_s3
 from audioexplorer.feature_extractor import get_features_from_ndarray
 from audioexplorer.embedding import get_embeddings
-from audioexplorer.visualize import make_scatterplot
+from audioexplorer.visualize import make_scatterplot, specgram_base64
 
 
 external_stylesheets = ['https://codepen.io/chriddyp/pen/bWLwgP.css']
@@ -49,6 +50,7 @@ app.layout = html.Div(
     },
     children=[
         dcc.Store(id='signed-url-store', storage_type='memory'),
+        dcc.Store(id='metadata-store', storage_type='memory'),
         html.Div(className="row", children=[
             html.H2(
                 'Audio Explorer pre-alpha',
@@ -62,7 +64,7 @@ app.layout = html.Div(
                 id='upload-data',
                 maxFiles=1,
                 simultaneousUploads=4,
-                maxFileSize=10 * 1024 * 1024 * 1000,  # 500 MB
+                maxFileSize=5 * 1024 * 1024 * 1000,  # 500 MB
                 service="/upload_resumable",
                 textLabel="Drag and Drop Here to upload!",
                 startButton=False,
@@ -89,6 +91,7 @@ app.layout = html.Div(
             ]),
             html.Div(className="four columns", children=[
                 html.Div(id='upload-completed'),
+                html.Div(id='div-spectrogram', style={'margin-top': '20px'})
             ]),
         ]),
 
@@ -135,10 +138,16 @@ def upload_to_s3(filenames):
         key = f'{filename}_{time_now}_{remote_ip}.{ext}'
         copy_file_to_bucket(filepath, key)
         url = generate_signed_url(key)
-        return url
+
+        d = {
+            'key': key,
+            'url': url
+        }
+        return d
 
 
-@app.callback(Output('embedding-graph', 'children'),
+@app.callback([Output('embedding-graph', 'children'),
+               Output('metadata-store', 'data')],
               [Input('upload-data', 'fileNames')])
 def plot_embeddings(filenames):
     if filenames is not None:
@@ -159,21 +168,49 @@ def plot_embeddings(filenames):
             )
         ])
 
-        return graph
+        metadata = {'fs': fs}
+        return graph, metadata
+    else:
+        raise PreventUpdate()
 
 
 @app.callback(Output('audio-player', 'overrideProps'),
               [Input('graph', 'clickData'),
                Input('signed-url-store', 'data')])
-def update_player_status(click_data, signed_url):
+def update_player_status(click_data, url_store):
     if click_data:
         start, end = click_data['points'][0]['customdata']
         return {'autoPlay': True,
-                'src': signed_url,
+                'src': url_store['url'],
                 'from_position': start - 0.4,
                 'to_position': end + 0.4}
 
 
+@app.callback(Output('div-spectrogram', 'children'),
+              [Input('graph', 'clickData'),
+               Input('metadata-store', 'data'),
+               Input('signed-url-store', 'data')])
+def display_click_image(click_data, metadata, url):
+    if click_data:
+        start, end = click_data['points'][0]['customdata']
+        fs = metadata['fs']
+        key = url['key']
+        wav = read_wave_part_from_s3(
+            bucket=S3_BUCKET,
+            path=key,
+            fs=fs,
+            start=start,
+            end=end)
+        im = specgram_base64(signal=wav, fs=fs, start=start, end=end)
+
+        return html.Img(
+            src='data:image/png;base64, ' + im,
+            style={
+                'height': '25vh',
+                'display': 'block',
+                'margin': 'auto'
+            }
+        )
 
 if __name__ == '__main__':
     application.run(host='0.0.0.0', debug=True, port=8080)
