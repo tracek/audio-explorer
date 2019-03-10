@@ -11,6 +11,7 @@ from datetime import datetime
 from collections import namedtuple
 from flask import request
 from dash.dependencies import Input, Output
+from botocore.client import Config
 
 from settings import S3_BUCKET, S3_STREAMED
 from audioexplorer.audio_io import read_wave_local
@@ -119,7 +120,7 @@ def copy_file_to_bucket(filepath_input, key):
 
 
 def generate_signed_url(key):
-    s3_client = boto3.client('s3')
+    s3_client = boto3.client('s3', config=Config(signature_version='s3v4'))
     url = s3_client.generate_presigned_url('get_object', Params={'Bucket': S3_BUCKET, 'Key': key}, ExpiresIn=3600)
     return url
 
