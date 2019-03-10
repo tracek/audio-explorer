@@ -1,7 +1,5 @@
 import os
 import boto3
-import json
-import pandas as pd
 import dash
 import dash_audio_components
 import dash_resumable_upload
@@ -13,7 +11,7 @@ from flask import request
 from dash.dependencies import Input, Output
 from botocore.client import Config
 
-from settings import S3_BUCKET, S3_STREAMED
+from settings import S3_BUCKET
 from audioexplorer.audio_io import read_wave_local
 from audioexplorer.feature_extractor import get_features_from_ndarray
 from audioexplorer.embedding import get_embeddings
@@ -119,7 +117,12 @@ def copy_file_to_bucket(filepath_input, key):
         bucket.upload_fileobj(data, key, ExtraArgs={'ContentType': 'audio/wav'})
 
 
-def generate_signed_url(key):
+def generate_signed_url(key: str):
+    """
+    Create a signed url so that user can play the audio uploaded to a private bucket.
+    :param key: bucket key
+    :return: signed url
+    """
     s3_client = boto3.client('s3', region_name='eu-central-1', config=Config(signature_version='s3v4'))
     url = s3_client.generate_presigned_url('get_object', Params={'Bucket': S3_BUCKET, 'Key': key}, ExpiresIn=3600)
     return url
@@ -127,7 +130,7 @@ def generate_signed_url(key):
 
 @app.callback(Output('signed-url-store', 'data'),
               [Input('upload-data', 'fileNames')])
-def plot_embeddings(filenames):
+def upload_to_s3(filenames):
     if filenames is not None:
         filepath = 'uploads/' + filenames[-1]
         remote_ip = str(request.remote_addr)
