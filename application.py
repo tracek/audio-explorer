@@ -6,7 +6,6 @@ import dash_resumable_upload
 import dash_core_components as dcc
 import dash_html_components as html
 from datetime import datetime
-from collections import namedtuple
 from flask import request
 from dash.dependencies import Input, Output
 from botocore.client import Config
@@ -24,9 +23,6 @@ app = dash.Dash(__name__, external_stylesheets=external_stylesheets)
 app.config['suppress_callback_exceptions'] = True
 dash_resumable_upload.decorate_server(app.server, "uploads")
 application = app.server
-
-Sample = namedtuple('Sample', ['path', 'start', 'end'])
-
 
 with open('app_description.md', 'r') as file:
     description_md = file.read()
@@ -88,7 +84,7 @@ app.layout = html.Div(
                     style={'width': '90%'},
                     src='',
                     autoPlay=True,
-                    controls=True
+                    controls=False
                 )
             ]),
             html.Div(className="four columns", children=[
