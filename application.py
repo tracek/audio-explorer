@@ -199,9 +199,9 @@ def display_click_image(click_data, metadata, url):
             bucket=S3_BUCKET,
             path=key,
             fs=fs,
-            start=start,
-            end=end)
-        im = specgram_base64(signal=wav, fs=fs, start=start, end=end)
+            start=start - 0.4,
+            end=end + 0.4)
+        im = specgram_base64(signal=wav, fs=fs, start=start - 0.4, end=end + 0.4)
 
         return html.Img(
             src='data:image/png;base64, ' + im,
