@@ -30,6 +30,7 @@ A spectrogram is a visual representation of the spectrum of frequencies of a sig
 
 ### TODO
 * Allow multiple audio formats on input.
+* Add progress bar.
 * Set parameters of the onset detection and embedding algorithms.
 * Select samples with noise or other sound that is of no interest. Use this selection to clean the original recording of these sounds (frequencies) by spectral subtraction.
 * Allow user to download names of selected samples.
