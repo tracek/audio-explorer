@@ -74,8 +74,7 @@ app.layout = html.Div(
                 defaultStyle=upload_style,
                 activeStyle=upload_style,
                 completeStyle=upload_style
-            ),
-            html.Div(id='upload-output'),
+            )
         ]),
 
         # Body
