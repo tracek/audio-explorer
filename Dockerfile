@@ -1,4 +1,5 @@
 FROM continuumio/miniconda3:4.5.11
+
 RUN conda install -c conda-forge --quiet --yes \
     Python=3.6.8 \
     aubio=0.4.9 \
@@ -13,6 +14,8 @@ RUN conda install -c conda-forge --quiet --yes \
     boto3=1.9.107 \
     umap-learn=0.3.7 \
     sox=14.4.2
+
+RUN apt-get install -y libsox-fmt-mp3
 
 RUN pip install --no-cache-dir dash_audio_components dash_resumable_upload \
     dash==0.39.0 \
