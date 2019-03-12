@@ -1,13 +1,22 @@
 import numpy as np
 import boto3
+import librosa
+import sox
 from scipy.io import wavfile
 
 
-def read_wave_local(path: str, normalise=True) -> (int, np.ndarray):
-    fs, signal = wavfile.read(path)
-    if normalise:
-        signal = signal / signal.max()
-    return fs, signal.astype('float32')
+def convert_to_wav(input_path, output_path):
+    tfm = sox.Transformer()
+    tfm.rate(samplerate=16000)
+    tfm.norm(db_level=-3)
+    tfm.channels(1)
+    tfm.build(input_filepath=input_path, output_filepath=output_path)
+
+
+def read_wave_local(path: str) -> (int, np.ndarray):
+    signal, fs = librosa.load(path=path, sr=16000, mono=True)
+    return fs, signal
+
 
 
 def wav_float_to_int(signal: np.ndarray) -> np.ndarray:

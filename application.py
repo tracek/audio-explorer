@@ -12,7 +12,7 @@ from dash.exceptions import PreventUpdate
 from botocore.client import Config
 
 from settings import S3_BUCKET
-from audioexplorer.audio_io import read_wave_local, read_wave_part_from_s3
+from audioexplorer.audio_io import read_wave_local, read_wave_part_from_s3, convert_to_wav
 from audioexplorer.feature_extractor import get_features_from_ndarray
 from audioexplorer.embedding import get_embeddings
 from audioexplorer.visualize import make_scatterplot, specgram_base64
@@ -21,7 +21,7 @@ from audioexplorer.visualize import make_scatterplot, specgram_base64
 external_stylesheets = ['https://codepen.io/chriddyp/pen/bWLwgP.css']
 
 app = dash.Dash(__name__, external_stylesheets=external_stylesheets)
-app.config['suppress_callback_exceptions'] = True
+# app.config['suppress_callback_exceptions'] = True
 dash_resumable_upload.decorate_server(app.server, "uploads")
 application = app.server
 
@@ -51,6 +51,7 @@ app.layout = html.Div(
     children=[
         dcc.Store(id='signed-url-store', storage_type='memory'),
         dcc.Store(id='metadata-store', storage_type='memory'),
+        dcc.Store(id='filename-store', storage_type='memory'),
         html.Div(className="row", children=[
             html.H2(
                 'Audio Explorer pre-alpha',
@@ -80,7 +81,10 @@ app.layout = html.Div(
         # Body
         html.Div(className="row", children=[
             html.Div(className="eight columns", children=[
-                html.Div(id='embedding-graph'),
+                dcc.Graph(
+                    id='graph',
+                    style={'height': '80vh'}
+                ),
                 dash_audio_components.DashAudioComponents(
                     id='audio-player',
                     style={'width': '90%'},
@@ -111,7 +115,7 @@ app.layout = html.Div(
 
 def copy_file_to_bucket(filepath_input, key):
     s3 = boto3.resource('s3')
-    bucket = s3.Bucket('audioexplorer')
+    bucket = s3.Bucket(S3_BUCKET)
     with open(filepath_input, 'rb') as data:
         bucket.upload_fileobj(data, key, ExtraArgs={'ContentType': 'audio/wav'})
 
@@ -127,49 +131,49 @@ def generate_signed_url(key: str):
     return url
 
 
-@app.callback(Output('signed-url-store', 'data'),
+@app.callback(Output('filename-store', 'data'),
               [Input('upload-data', 'fileNames')])
-def upload_to_s3(filenames):
+def convert_upload_to_wave(filenames):
     if filenames is not None:
-        filepath = 'uploads/' + filenames[-1]
         remote_ip = str(request.remote_addr)
+        filepath = 'uploads/' + filenames[-1]
         time_now = datetime.now().strftime("%Y-%m-%d_%H:%M:%S")
         filename, ext = os.path.splitext(os.path.basename(filepath))
         key = f'{filename}_{time_now}_{remote_ip}.{ext}'
-        copy_file_to_bucket(filepath, key)
-        url = generate_signed_url(key)
-
-        d = {
-            'key': key,
-            'url': url
-        }
-        return d
+        convert_to_wav(filepath, 'uploads/' + key)
+        return key
+    else:
+        raise PreventUpdate()
 
 
-@app.callback([Output('embedding-graph', 'children'),
+@app.callback(Output('signed-url-store', 'data'),
+              [Input('filename-store', 'data')])
+def upload_to_s3(filename):
+    if filename is not None:
+        filepath = 'uploads/' + filename
+        copy_file_to_bucket(filepath, filename)
+        url = generate_signed_url(filename)
+        return url
+    else:
+        raise PreventUpdate()
+
+
+@app.callback([Output('graph', 'figure'),
                Output('metadata-store', 'data')],
-              [Input('upload-data', 'fileNames')])
-def plot_embeddings(filenames):
-    if filenames is not None:
-        filepath = 'uploads/' + filenames[-1]
+              [Input('filename-store', 'data')])
+def plot_embeddings(filename):
+    if filename is not None:
+        filepath = 'uploads/' + filename
         fs, X = read_wave_local(filepath)
         features = get_features_from_ndarray(X, fs, n_jobs=1)
         features_for_emb = features.drop(columns=['onset', 'offset'])
         embeddings = get_embeddings(features_for_emb, type='tsne', perplexity=60)
-        features.insert(0, column='filename', value=filenames[-1])
+        # features.insert(0, column='filename', value=filenames[-1])
         extra_data = ['onset', 'offset']
         figure = make_scatterplot(x=embeddings[:, 0], y=embeddings[:, 1], customdata=features[extra_data])
 
-        graph = html.Div([
-            dcc.Graph(
-                id='graph',
-                figure=figure,
-                style={'height': '80vh'}
-            )
-        ])
-
         metadata = {'fs': fs}
-        return graph, metadata
+        return figure, metadata
     else:
         raise PreventUpdate()
 
@@ -177,27 +181,28 @@ def plot_embeddings(filenames):
 @app.callback(Output('audio-player', 'overrideProps'),
               [Input('graph', 'clickData'),
                Input('signed-url-store', 'data')])
-def update_player_status(click_data, url_store):
+def update_player_status(click_data, url):
     if click_data:
         start, end = click_data['points'][0]['customdata']
         return {'autoPlay': True,
-                'src': url_store['url'],
+                'src': url,
                 'from_position': start - 0.4,
                 'to_position': end + 0.4}
+    else:
+        raise PreventUpdate()
 
 
 @app.callback(Output('div-spectrogram', 'children'),
               [Input('graph', 'clickData'),
                Input('metadata-store', 'data'),
-               Input('signed-url-store', 'data')])
+               Input('filename-store', 'data')])
 def display_click_image(click_data, metadata, url):
-    if click_data:
+    if (click_data is not None) and (url is not None):
         start, end = click_data['points'][0]['customdata']
         fs = metadata['fs']
-        key = url['key']
         wav = read_wave_part_from_s3(
             bucket=S3_BUCKET,
-            path=key,
+            path=url,
             fs=fs,
             start=start - 0.4,
             end=end + 0.4)

@@ -11,14 +11,16 @@ RUN conda install -c conda-forge --quiet --yes \
     scikit-learn=0.20.2 \
     scipy=1.2.1 \
     boto3=1.9.107 \
-    umap-learn=0.3.7
+    umap-learn=0.3.7 \
+    sox=14.4.2
 
 RUN pip install --no-cache-dir dash_audio_components dash_resumable_upload \
     dash==0.39.0 \
     dash-html-components==0.14.0 \
     dash-core-components==0.44 \
     dash-table==3.6.0 \
-    plotly==3.6.1
+    plotly==3.6.1 \
+    sox==1.3.7
 
 COPY . /app
 WORKDIR /app
