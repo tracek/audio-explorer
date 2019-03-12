@@ -1,34 +1,32 @@
+import os
 import numpy as np
 import boto3
 import librosa
 import sox
-from scipy.io import wavfile
+
+
+def is_conversion_required(filepath):
+    sample_rate_16khz = int(sox.file_info.sample_rate(filepath)) == 16000
+    mono = sox.file_info.channels(filepath) == 1
+    wav = sox.file_info.file_type(filepath) == 'wav'
+    convert = sample_rate_16khz and mono and wav
+    return not convert
 
 
 def convert_to_wav(input_path, output_path):
-    tfm = sox.Transformer()
-    tfm.rate(samplerate=16000)
-    tfm.norm(db_level=-3)
-    tfm.channels(1)
-    tfm.build(input_filepath=input_path, output_filepath=output_path)
+    if is_conversion_required(input_path):
+        tfm = sox.Transformer()
+        tfm.rate(samplerate=16000)
+        tfm.norm(db_level=-3)
+        tfm.channels(1)
+        tfm.build(input_filepath=input_path, output_filepath=output_path)
+    else:
+        os.rename(input_path, output_path)
 
 
 def read_wave_local(path: str) -> (int, np.ndarray):
     signal, fs = librosa.load(path=path, sr=16000, mono=True)
     return fs, signal
-
-
-
-def wav_float_to_int(signal: np.ndarray) -> np.ndarray:
-    max_abs_val = np.absolute(signal).max()
-    signal = ((signal / (max_abs_val / (2 ** 15 - 1))).astype('int16'))
-    return signal
-
-
-def write_wave(path: str, signal: np.ndarray, pcm16: bool=True, rate: int = 16000) -> None:
-    if pcm16:
-        signal = wav_float_to_int(signal)
-    wavfile.write(path, rate, signal)
 
 
 def seconds_to_wav_bytes(time, fs, dtype, wav_header_size: int=44):

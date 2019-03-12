@@ -138,7 +138,7 @@ def convert_upload_to_wave(filenames):
         filepath = 'uploads/' + filenames[-1]
         time_now = datetime.now().strftime("%Y-%m-%d_%H:%M:%S")
         filename, ext = os.path.splitext(os.path.basename(filepath))
-        key = f'{filename}_{time_now}_{remote_ip}.{ext}'
+        key = f'{filename}_{time_now}_{remote_ip}.wav'
         convert_to_wav(filepath, 'uploads/' + key)
         return key
     else:

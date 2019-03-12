@@ -1,4 +1,5 @@
 FROM continuumio/miniconda3:4.5.11
+RUN sudo apt-get install -y libsox-fmt-mp3
 RUN conda install -c conda-forge --quiet --yes \
     Python=3.6.8 \
     aubio=0.4.9 \
