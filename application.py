@@ -18,10 +18,7 @@ from audioexplorer.embedding import get_embeddings
 from audioexplorer.visualize import make_scatterplot, specgram_base64
 
 
-external_stylesheets = ['https://codepen.io/chriddyp/pen/bWLwgP.css']
-
-app = dash.Dash(__name__, external_stylesheets=external_stylesheets)
-# app.config['suppress_callback_exceptions'] = True
+app = dash.Dash(__name__, external_stylesheets=['https://codepen.io/chriddyp/pen/bWLwgP.css'])
 dash_resumable_upload.decorate_server(app.server, "uploads")
 application = app.server
 
