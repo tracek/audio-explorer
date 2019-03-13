@@ -58,20 +58,6 @@ app.layout = html.Div(
                     'margin': '30px auto',
                 }
             ),
-            dash_resumable_upload.Upload(
-                id='upload-data',
-                maxFiles=1,
-                simultaneousUploads=4,
-                maxFileSize=5 * 1024 * 1024 * 1000,  # 500 MB
-                service="/upload_resumable",
-                textLabel="Drag and Drop Here to upload!",
-                startButton=False,
-                pauseButton=False,
-                cancelButton=False,
-                defaultStyle=upload_style,
-                activeStyle=upload_style,
-                completeStyle=upload_style
-            )
         ]),
 
         # Body
@@ -91,6 +77,20 @@ app.layout = html.Div(
             ]),
             html.Div(className="four columns", children=[
                 html.Div(id='upload-completed'),
+                dash_resumable_upload.Upload(
+                    id='upload-data',
+                    maxFiles=1,
+                    simultaneousUploads=4,
+                    maxFileSize=10 * 1024 * 1024 * 1000,  # 500 MB
+                    service="/upload_resumable",
+                    textLabel="Drag and Drop Here to upload!",
+                    startButton=False,
+                    pauseButton=False,
+                    cancelButton=False,
+                    defaultStyle=upload_style,
+                    activeStyle=upload_style,
+                    completeStyle=upload_style
+                ),
                 html.Div(id='div-spectrogram', style={'margin-top': '20px'})
             ]),
         ]),
