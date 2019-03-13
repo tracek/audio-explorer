@@ -3,7 +3,7 @@ import numpy as np
 import boto3
 import librosa
 import sox
-
+import logging
 
 def is_conversion_required(filepath):
     sample_rate_16khz = int(sox.file_info.sample_rate(filepath)) == 16000
@@ -14,10 +14,9 @@ def is_conversion_required(filepath):
 
 
 def convert_to_wav(input_path, output_path):
-    # app.logger.info(f'Entering convert_to_wav with input: {input_path} to {output_path}')
+    logging.info(f'Entering convert_to_wav with input: {input_path} to {output_path}')
     if not os.path.isfile(input_path):
         raise Exception(f'Input path {input_path} is not there!')
-    #     app.logger.error(f'Path does not exist!')
     if is_conversion_required(input_path):
         tfm = sox.Transformer()
         tfm.rate(samplerate=16000)
