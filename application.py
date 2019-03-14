@@ -47,7 +47,7 @@ app.layout = html.Div(
     },
     children=[
         dcc.Store(id='signed-url-store', storage_type='memory'),
-        dcc.Store(id='metadata-store', storage_type='memory'),
+        dcc.Store(id='feature-store', storage_type='memory'),
         dcc.Store(id='filename-store', storage_type='memory'),
         html.Div(className="row", children=[
             html.H2(
@@ -80,7 +80,7 @@ app.layout = html.Div(
                 dash_resumable_upload.Upload(
                     id='upload-data',
                     maxFiles=1,
-                    simultaneousUploads=4,
+                    simultaneousUploads=1,
                     maxFileSize=10 * 1024 * 1024 * 1000,  # 1000 MB
                     service="/upload_resumable",
                     textLabel="Drag and Drop Here to upload!",
@@ -155,7 +155,7 @@ def upload_to_s3(filename):
 
 
 @app.callback([Output('graph', 'figure'),
-               Output('metadata-store', 'data')],
+               Output('feature-store', 'data')],
               [Input('filename-store', 'data')])
 def plot_embeddings(filename):
     if filename is not None:
@@ -166,10 +166,12 @@ def plot_embeddings(filename):
         embeddings = get_embeddings(features_for_emb, type='tsne', perplexity=60)
         # features.insert(0, column='filename', value=filenames[-1])
         extra_data = ['onset', 'offset']
-        figure = make_scatterplot(x=embeddings[:, 0], y=embeddings[:, 1], customdata=features[extra_data])
+        mean_freq = features['stat_median'].astype(int).astype(str) + ' Hz'
+        figure = make_scatterplot(x=embeddings[:, 0], y=embeddings[:, 1],
+                                  customdata=features[extra_data],
+                                  text=mean_freq)
 
-        metadata = {'fs': fs}
-        return figure, metadata
+        return figure, features.to_dict(orient='rows')
     else:
         raise PreventUpdate()
 
@@ -190,19 +192,17 @@ def update_player_status(click_data, url):
 
 @app.callback(Output('div-spectrogram', 'children'),
               [Input('graph', 'clickData'),
-               Input('metadata-store', 'data'),
                Input('filename-store', 'data')])
-def display_click_image(click_data, metadata, url):
+def display_click_image(click_data, url):
     if (click_data is not None) and (url is not None):
         start, end = click_data['points'][0]['customdata']
-        fs = metadata['fs']
         wav = read_wave_part_from_s3(
             bucket=S3_BUCKET,
             path=url,
-            fs=fs,
+            fs=16000,
             start=start - 0.4,
             end=end + 0.4)
-        im = specgram_base64(signal=wav, fs=fs, start=start - 0.4, end=end + 0.4)
+        im = specgram_base64(signal=wav, fs=16000, start=start - 0.4, end=end + 0.4)
 
         return html.Img(
             src='data:image/png;base64, ' + im,
@@ -212,6 +212,7 @@ def display_click_image(click_data, metadata, url):
                 'margin': 'auto'
             }
         )
+
 
 if __name__ == '__main__':
     application.run(host='0.0.0.0', debug=True, port=8080)

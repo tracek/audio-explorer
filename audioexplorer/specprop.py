@@ -33,14 +33,14 @@ def spectral_statistics(y: np.ndarray, fs: int, lowcut: int = 0) -> dict:
     skew = ((z ** 3).sum() / (len(spec) - 1)) / w ** 3
     kurt = ((z ** 4).sum() / (len(spec) - 1)) / w ** 4
 
-    top_peaks_ordered_by_power = {'stat_freq_peak_by_power_1': 0, 'stat_freq_peak_by_power_2': 0, 'stat_freq_peak_by_power_3': 0}
-    top_peaks_ordered_by_order = {'stat_freq_peak_by_order_1': 0, 'stat_freq_peak_by_order_2': 0, 'stat_freq_peak_by_order_3': 0}
+    top_peaks_ordered_by_power = {'stat_freq_peak_by_power.1': 0, 'stat_freq_peak_by_power.2': 0, 'stat_freq_peak_by_power.3': 0}
+    top_peaks_ordered_by_seq = {'stat_freq_peak.1': 0, 'stat_freq_peak.2': 0, 'stat_freq_peak.3': 0}
     amp_smooth = signal.medfilt(amp, kernel_size=15)
     peaks, height_d = signal.find_peaks(amp_smooth, distance=100, height=0.002)
     if peaks.size != 0:
         peak_f = freq[peaks]
-        for peak, peak_name in zip(peak_f, top_peaks_ordered_by_order.keys()):
-            top_peaks_ordered_by_order[peak_name] = peak
+        for peak, peak_name in zip(peak_f, top_peaks_ordered_by_seq.keys()):
+            top_peaks_ordered_by_seq[peak_name] = peak
 
         idx_three_top_peaks = height_d['peak_heights'].argsort()[-3:][::-1]
         top_3_freq = peak_f[idx_three_top_peaks]
@@ -59,7 +59,7 @@ def spectral_statistics(y: np.ndarray, fs: int, lowcut: int = 0) -> dict:
         'stat_kurt': kurt
     }
     specprops.update(top_peaks_ordered_by_power)
-    specprops.update(top_peaks_ordered_by_order)
+    specprops.update(top_peaks_ordered_by_seq)
     return specprops
 
 
@@ -95,9 +95,9 @@ def mel_frequency_cepstral_coefficients(y: np.ndarray, fs: int, n_mfcc=13, block
     delta2_mfcc = librosa.feature.delta(mfcc, order=2, mode='nearest')
     feature_vector = np.concatenate((np.mean(mfcc, 1), np.mean(delta_mfcc, 1), np.mean(delta2_mfcc, 1)))
 
-    mfcc_names = [f'mfcc_d0_{idx}' for idx in range(1, n_mfcc + 1)]
-    mfcc_delta_names = [f'mfcc_d1_{idx}' for idx in range(1, n_mfcc + 1)]
-    mfcc_delta2_names = [f'mfcc_d2_{idx}' for idx in range(1, n_mfcc + 1)]
+    mfcc_names = [f'mfcc_d0.{idx}' for idx in range(1, n_mfcc + 1)]
+    mfcc_delta_names = [f'mfcc_d1.{idx}' for idx in range(1, n_mfcc + 1)]
+    mfcc_delta2_names = [f'mfcc_d2.{idx}' for idx in range(1, n_mfcc + 1)]
 
     # feature_vector = (feature_vector-np.mean(feature_vector)) / np.std(feature_vector)
     feature_vector = pd.Series(data=feature_vector, index=mfcc_names+mfcc_delta_names+mfcc_delta2_names)
