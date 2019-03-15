@@ -54,7 +54,7 @@ def get_features_from_ndarray(X, fs,
                               onset_threshold = 0.01,
                               onset_silence_threshold = -90,
                               min_duration_s = 0.15,
-                              sample_len = 0.2,
+                              sample_len = 0.3,
                               lowcut=500,
                               highcut=6000) -> pd.DataFrame:
     if not step_size:

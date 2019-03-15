@@ -69,8 +69,8 @@ def specgram_base64(signal: np.ndarray, fs, start, end) -> str:
     plt.xlabel('Time [s]')
     plt.ylabel('Frequency [Hz]')
     plt.title('Spectrogram')
-    ax.axvline(x=start + 0.4, color='red', alpha=0.3)
-    ax.axvline(x=end - 0.4, color='red', alpha=0.3)
+    ax.axvline(x=start + 0.2, color='red', alpha=0.3)
+    ax.axvline(x=end - 0.2, color='red', alpha=0.3)
 
     stream = BytesIO()
     plt.savefig(stream, format='png')

@@ -184,8 +184,8 @@ def update_player_status(click_data, url):
         start, end = click_data['points'][0]['customdata']
         return {'autoPlay': True,
                 'src': url,
-                'from_position': start - 0.4,
-                'to_position': end + 0.4}
+                'from_position': start - 0.2,
+                'to_position': end + 0.2}
     else:
         raise PreventUpdate()
 
@@ -200,9 +200,9 @@ def display_click_image(click_data, url):
             bucket=S3_BUCKET,
             path=url,
             fs=16000,
-            start=start - 0.4,
-            end=end + 0.4)
-        im = specgram_base64(signal=wav, fs=16000, start=start - 0.4, end=end + 0.4)
+            start=start - 0.2,
+            end=end + 0.2)
+        im = specgram_base64(signal=wav, fs=16000, start=start - 0.2, end=end + 0.2)
 
         return html.Img(
             src='data:image/png;base64, ' + im,
