@@ -13,7 +13,7 @@ class YaafeWrapper(object):
             'Chroma2': f'Chroma2 CQTAlign=c  CQTBinsPerOctave=48  CQTMinFreq=27.5  CQTNbOctaves=7  CZBinsPerSemitone=1  CZNbCQTBinsAggregatedToPCPBin=-1  CZTuning=440  stepSize={step_size}',
             'LPC': f'LPC LPCNbCoeffs=2  blockSize={block_size}  stepSize={step_size}',
             'LSF': f'LSF blockSize={block_size}  stepSize={step_size}',
-            'MFCC2': f'MFCC CepsIgnoreFirstCoeff=1  CepsNbCoeffs=13  FFTWindow=Hanning  MelMaxFreq=5000.0  MelMinFreq=400.0  MelNbFilters=40  blockSize={block_size}  stepSize={step_size}',
+            'MFCC2': f'MFCC CepsIgnoreFirstCoeff=1  CepsNbCoeffs=20  FFTWindow=Hanning  MelMaxFreq=6000.0  MelMinFreq=400.0  MelNbFilters=40  blockSize={block_size}  stepSize={step_size}',
             'OBSI': f'OBSI FFTLength=0  FFTWindow=Hanning  OBSIMinFreq=27.5  blockSize={block_size}  stepSize={step_size}',
             'OBSIR': f'OBSIR DiffNbCoeffs=0  FFTLength=0  FFTWindow=Hanning  OBSIMinFreq=27.5  blockSize={block_size}  stepSize={step_size}',
             'PerceptualSharpness': f'PerceptualSharpness FFTLength=0  FFTWindow=Hanning  blockSize={block_size}  stepSize={step_size}',

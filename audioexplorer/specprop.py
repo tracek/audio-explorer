@@ -33,15 +33,11 @@ def spectral_statistics(y: np.ndarray, fs: int, lowcut: int = 0) -> dict:
     skew = ((z ** 3).sum() / (len(spec) - 1)) / w ** 3
     kurt = ((z ** 4).sum() / (len(spec) - 1)) / w ** 4
 
-    top_peaks_ordered_by_power = {'stat_freq_peak_by_power.1': 0, 'stat_freq_peak_by_power.2': 0, 'stat_freq_peak_by_power.3': 0}
-    top_peaks_ordered_by_seq = {'stat_freq_peak.1': 0, 'stat_freq_peak.2': 0, 'stat_freq_peak.3': 0}
+    top_peaks_ordered_by_power = {'stat_freq_peak.1': 0, 'stat_freq_peak.2': 0, 'stat_freq_peak.3': 0}
     amp_smooth = signal.medfilt(amp, kernel_size=15)
     peaks, height_d = signal.find_peaks(amp_smooth, distance=100, height=0.002)
     if peaks.size != 0:
         peak_f = freq[peaks]
-        for peak, peak_name in zip(peak_f, top_peaks_ordered_by_seq.keys()):
-            top_peaks_ordered_by_seq[peak_name] = peak
-
         idx_three_top_peaks = height_d['peak_heights'].argsort()[-3:][::-1]
         top_3_freq = peak_f[idx_three_top_peaks]
         for peak, peak_name in zip(top_3_freq, top_peaks_ordered_by_power.keys()):
@@ -59,7 +55,6 @@ def spectral_statistics(y: np.ndarray, fs: int, lowcut: int = 0) -> dict:
         'stat_kurt': kurt
     }
     specprops.update(top_peaks_ordered_by_power)
-    specprops.update(top_peaks_ordered_by_seq)
     return specprops
 
 
