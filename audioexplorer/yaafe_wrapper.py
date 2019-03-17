@@ -50,7 +50,7 @@ class YaafeWrapper(object):
             if values.shape[1] == 1:
                 flat_dict[name] = values.mean()
             else:
-                d = {f'{name}_{idx}': value for idx, value in enumerate(list(values.mean(axis=0)))}
+                d = {f'{name}.{idx}': value for idx, value in enumerate(list(values.mean(axis=0)))}
                 flat_dict.update(d)
         return flat_dict
 

@@ -46,19 +46,18 @@ def split_audio_into_chunks_by_onsets(X: np.ndarray, fs: int, onsets: np.ndarray
     return samples
 
 
-def get_features_from_ndarray(X, fs,
-                              n_jobs: int = 1,
-                              block_size = 512,
-                              step_size = None,
-                              onset_detector_type = 'hfc',
-                              onset_threshold = 0.01,
-                              onset_silence_threshold = -90,
-                              min_duration_s = 0.15,
-                              sample_len = 0.3,
-                              lowcut=500,
-                              highcut=6000) -> pd.DataFrame:
-    if not step_size:
-        step_size = block_size // 2
+def get_features_from_ndarray(X, fs, **kwargs) -> pd.DataFrame:
+    lowcut = int(kwargs.get('lowcut', 500))
+    highcut = int(kwargs.get('highcut', 6000))
+    block_size = int(kwargs.get('block_size', 512))
+    step_size = int(kwargs.get('step_size', block_size // 2))
+    onset_detector_type = kwargs.get('onset_detector_type', 'hfc')
+    onset_threshold = float(kwargs.get('onset_threshold', 0.01))
+    onset_silence_threshold = float(kwargs.get('onset_silence_threshold', -90))
+    min_duration_s = float(kwargs.get('min_duration_s', 0.15))
+    sample_len = float(kwargs.get('sample_len', 0.2))
+    n_jobs = int(kwargs.get('n_jobs', 1))
+
     X = frequency_filter(X, fs, lowcut=lowcut, highcut=highcut)
     onset_detector = OnsetDetector(fs, nfft=block_size, hop=step_size,
                                    onset_detector_type=onset_detector_type,
@@ -79,10 +78,3 @@ def get_features_from_ndarray(X, fs,
     features = features.reset_index(drop=True)
     return features
 
-
-if __name__ == '__main__':
-    from scipy.io import wavfile
-    path = '/home/ec4678/Projects/petrel-spotter/data/raw/STHELENA-02_20140605_200000_1.wav'
-    fs, signal = wavfile.read(path)
-    signal = signal / signal.max()
-    features = get_features_from_ndarray(signal, fs, n_jobs=1)
