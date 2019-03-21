@@ -1,6 +1,41 @@
 import numpy as np
+from joblib import dump, load
 from sklearn.preprocessing import StandardScaler
 from sklearn import manifold
+
+
+def fit_and_dump(data: np.ndarray, embedding: str, name: str, **kwargs):
+    embedding = embedding.lower()
+    scaler = StandardScaler()
+    data = scaler.fit_transform(data)
+
+    if embedding == 'tsne':
+        perplexity = kwargs.get('perplexity', 60)
+        n_iter_without_progress = kwargs.get('n_iter_without_progress', 100)
+        tsne_init = kwargs.get('init', 'pca')
+        algo = manifold.TSNE(perplexity=perplexity,
+                             n_iter_without_progress=n_iter_without_progress,
+                             init=tsne_init)
+    elif embedding == 'umap':
+        import umap
+        n_neighbors = kwargs.get('n_neighbors', 10)
+        min_dist = kwargs.get('min_dist', 0.1)
+        metric = kwargs.get('metric', 'euclidean')
+        algo = umap.UMAP(n_neighbors=n_neighbors, min_dist=min_dist, metric=metric, init='random')
+    else:
+        raise NotImplemented(f'Requested embedding type {embedding} is not implemented')
+
+    fit = algo.fit(data)
+    dump(scaler, filename=f'{name}_scaler.joblib', compress=True)
+    dump(fit, filename=f'{name}_{embedding}_model.joblib', compress=True)
+
+
+def load_and_transform(data: np.ndarray, name: str) -> np.ndarray:
+    scaler = load(name + '_scaler.joblib')
+    model = load(name + '_model.joblib')
+    data = scaler.transform(data)
+    embedding = model.transform(data)
+    return embedding
 
 
 def get_embeddings(data, type='tsne', **kwargs) -> np.ndarray:
@@ -21,4 +56,5 @@ def get_embeddings(data, type='tsne', **kwargs) -> np.ndarray:
 
     embedding = algo.fit_transform(data)
     return embedding
+
 

@@ -25,7 +25,7 @@ class FeatureExtractor(object):
         return r
 
 
-def get_features(samples: np.ndarray, fs: int):
+def _extract_features(samples: np.ndarray, fs: int):
     extractor = FeatureExtractor(fs)
     features = []
     for sample in samples:
@@ -34,7 +34,7 @@ def get_features(samples: np.ndarray, fs: int):
     return pd.DataFrame(features)
 
 
-def split_audio_into_chunks_by_onsets(X: np.ndarray, fs: int, onsets: np.ndarray, sample_len: float, split: int) -> np.ndarray:
+def _split_audio_into_chunks_by_onsets(X: np.ndarray, fs: int, onsets: np.ndarray, sample_len: float, split: int) -> np.ndarray:
     samples = []
     for onset in onsets:
         start = int(onset * fs)
@@ -46,7 +46,7 @@ def split_audio_into_chunks_by_onsets(X: np.ndarray, fs: int, onsets: np.ndarray
     return samples
 
 
-def get_features_from_ndarray(X, fs, **kwargs) -> pd.DataFrame:
+def get(X, fs, n_jobs=1, **kwargs) -> pd.DataFrame:
     lowcut = int(kwargs.get('lowcut', 500))
     highcut = int(kwargs.get('highcut', 6000))
     block_size = int(kwargs.get('block_size', 512))
@@ -56,7 +56,6 @@ def get_features_from_ndarray(X, fs, **kwargs) -> pd.DataFrame:
     onset_silence_threshold = float(kwargs.get('onset_silence_threshold', -90))
     min_duration_s = float(kwargs.get('min_duration_s', 0.15))
     sample_len = float(kwargs.get('sample_len', 0.2))
-    n_jobs = int(kwargs.get('n_jobs', 1))
 
     X = frequency_filter(X, fs, lowcut=lowcut, highcut=highcut)
     onset_detector = OnsetDetector(fs, nfft=block_size, hop=step_size,
@@ -65,12 +64,12 @@ def get_features_from_ndarray(X, fs, **kwargs) -> pd.DataFrame:
                                    min_duration_s=min_duration_s)
 
     onsets = onset_detector.get_all(X)
-    chunks = split_audio_into_chunks_by_onsets(X, fs, onsets, sample_len, n_jobs)
+    chunks = _split_audio_into_chunks_by_onsets(X, fs, onsets, sample_len, n_jobs)
     if n_jobs == 1:
-        features = get_features(chunks, fs)
+        features = _extract_features(chunks, fs)
     else:
         features = Parallel(n_jobs=n_jobs, backend='multiprocessing')(
-            delayed(get_features)(samples=chunk, fs=fs) for chunk in chunks)
+            delayed(_extract_features)(samples=chunk, fs=fs) for chunk in chunks)
         features = pd.concat(features)
 
     features.insert(0, column='offset', value=onsets + sample_len)

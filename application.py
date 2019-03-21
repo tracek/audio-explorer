@@ -13,7 +13,7 @@ from botocore.client import Config
 
 from settings import S3_BUCKET
 from audioexplorer.audio_io import read_wave_local, read_wave_part_from_s3, convert_to_wav
-from audioexplorer.feature_extractor import get_features_from_ndarray
+from audioexplorer.features import get
 from audioexplorer.embedding import get_embeddings
 from audioexplorer.visualize import make_scatterplot, specgram_base64
 
@@ -161,7 +161,7 @@ def plot_embeddings(filename):
     if filename is not None:
         filepath = 'uploads/' + filename
         fs, X = read_wave_local(filepath)
-        features = get_features_from_ndarray(X, fs, n_jobs=1)
+        features = get(X, fs, n_jobs=1)
         features_for_emb = features.drop(columns=['onset', 'offset'])
         embeddings = get_embeddings(features_for_emb, type='tsne', perplexity=60)
         # features.insert(0, column='filename', value=filenames[-1])
