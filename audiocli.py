@@ -1,4 +1,7 @@
+#!/usr/bin/env python3
+
 import os
+import sys
 import shutil
 import glob
 import click
@@ -10,8 +13,12 @@ from audioexplorer import features, embedding
 
 
 @click.group()
-def root():
-    pass
+@click.option('--quiet', default=False, is_flag=True, help='Run in a silent mode')
+def root(quiet):
+    if quiet:
+        logging.basicConfig(stream=sys.stdout, level=logging.ERROR)
+    else:
+        logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
 
 
 @root.command('a2f', help='Audio to HDF5 features')
@@ -35,7 +42,8 @@ def process(path, output, jobs, config, single):
         feats = features.get(y, sr, n_jobs=jobs, **extractor_config)
 
         if single:
-            output_path = os.path.join(output, 'audio_features.h5')
+            name = get_name_from_config(config)
+            output_path = os.path.join(output, name + '.h5')
             feats.to_hdf(output_path, key=key, mode='a', format='fixed')
         else:
             output_path = os.path.join(output, filename_noext + '.h5')
