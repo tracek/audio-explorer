@@ -4,9 +4,6 @@ Manual labelling of audio is time consuming and error prone. With this tool we a
 ### How do we solve the problem
 We take the multidimensional space of computed audio features and project it to two dimensions, while retaining most of the information that describes the sample. That means that audio pieces that sound similar will be packed closely together, while those that sound quite different should be far apart. User can select cluster of similar-sounding samples and mark them, using her / his expertise. 
 
-### Where to start?
-At present moment the program expects 16 khz mono channel audio in WAV format. That being said, enabling various other formats and stereo should be easy.
-
 ### What am I looking at?
 The scatter plot is the result of running the dimensionality reduction algorithms on audio recordings, resulting in a 2D visualization of the dataset. Each data point is a short sample retrieved from audio. 
 
