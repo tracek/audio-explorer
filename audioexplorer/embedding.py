@@ -1,5 +1,5 @@
 import numpy as np
-from joblib import dump, load
+import joblib
 from sklearn.preprocessing import StandardScaler
 from sklearn import manifold
 
@@ -26,13 +26,13 @@ def fit_and_dump(data: np.ndarray, embedding: str, name: str, **kwargs):
         raise NotImplemented(f'Requested embedding type {embedding} is not implemented')
 
     fit = algo.fit(data)
-    dump(scaler, filename=f'{name}_scaler.joblib', compress=True)
-    dump(fit, filename=f'{name}_{embedding}_model.joblib', compress=True)
+    joblib.dump({'scaler': scaler, 'model': fit}, filename=f'{name}.joblib')
 
 
 def load_and_transform(data: np.ndarray, name: str) -> np.ndarray:
-    scaler = load(name + '_scaler.joblib')
-    model = load(name + '_model.joblib')
+    d = joblib.load(name + '.joblib')
+    scaler = d['scaler']
+    model = d['model']
     data = scaler.transform(data)
     embedding = model.transform(data)
     return embedding

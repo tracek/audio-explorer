@@ -72,7 +72,11 @@ def get_name_from_config(configpath):
               default='tsne', help='Embedding to use')
 def h5_to_embedding(input, output, algo):
     if os.path.isfile(input):
-        dfs = pd.read_hdf(input)
+        hdf_store = pd.HDFStore(input)
+        hdf_keys = hdf_store.keys()
+        hdf_store.close()
+        dfs = [pd.read_hdf(input, key=key) for key in hdf_keys]
+        dfs = pd.concat(dfs)
         if not output:
             output = os.path.splitext(input)[0]
     elif os.path.isdir(input):
