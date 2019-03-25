@@ -92,10 +92,16 @@ def h5_to_embedding(input, output, algo):
 
 
 @root.command('m2e', help='Model to embedddings')
-@click.option("--features", "-i", type=click.Path(exists=True), help="Path to h5 features.")
-@click.option("--model", "-m", type=click.Path(exists=True), help="Embedding model to use.")
-def embed_features(features, model):
-    df = pd.read_hdf(features)
+@click.option("--input", "-i", type=click.Path(exists=True), help="Path to h5 features.", required=True)
+@click.option("--model", "-m", type=click.Path(exists=True), help="Embedding model to use.", required=True)
+@click.option("--output", "-out", help="Embedding output path.")
+def embed_features(input, model, output):
+    df = pd.read_hdf(input)
+    res = embedding.load_and_transform(df.values, model)
+    df_emb = pd.DataFrame(data=res, columns=['x', 'y'], index=False)
+    if not output:
+        output = os.path.splitext(input)[0] + '.csv'
+    df_emb.to_csv(output, index=False)
 
 
 if __name__ == '__main__':

@@ -1,7 +1,9 @@
 import numpy as np
 import joblib
+from multiprocessing import cpu_count
+from MulticoreTSNE import MulticoreTSNE
 from sklearn.preprocessing import StandardScaler
-from sklearn import manifold
+from sklearn.manifold import TSNE
 
 
 def fit_and_dump(data: np.ndarray, embedding: str, name: str, **kwargs):
@@ -13,9 +15,10 @@ def fit_and_dump(data: np.ndarray, embedding: str, name: str, **kwargs):
         perplexity = kwargs.get('perplexity', 60)
         n_iter_without_progress = kwargs.get('n_iter_without_progress', 100)
         tsne_init = kwargs.get('init', 'pca')
-        algo = manifold.TSNE(perplexity=perplexity,
+        algo = MulticoreTSNE(perplexity=perplexity,
                              n_iter_without_progress=n_iter_without_progress,
-                             init=tsne_init)
+                             init=tsne_init,
+                             n_jobs=cpu_count())
     elif embedding == 'umap':
         import umap
         n_neighbors = kwargs.get('n_neighbors', 10)
@@ -30,7 +33,7 @@ def fit_and_dump(data: np.ndarray, embedding: str, name: str, **kwargs):
 
 
 def load_and_transform(data: np.ndarray, name: str) -> np.ndarray:
-    d = joblib.load(name + '.joblib')
+    d = joblib.load(name)
     scaler = d['scaler']
     model = d['model']
     data = scaler.transform(data)
@@ -42,7 +45,7 @@ def get_embeddings(data, type='tsne', **kwargs) -> np.ndarray:
     data = StandardScaler().fit_transform(data)
     if type == 'tsne':
         perplexity = kwargs.get('perplexity', 80)
-        algo = manifold.TSNE(n_components=2, perplexity=perplexity)
+        algo = TSNE(n_components=2, perplexity=perplexity)
     elif type == 'umap':
         # somehow pydev debugger gets very slow upon loading of UMAP
         # moving umap here for the time being
