@@ -26,8 +26,9 @@ def root(quiet):
 @click.option("--output", "-out", type=click.STRING, default='.', help="Output file or directory.")
 @click.option("--jobs", "-j", type=click.INT, default=1, help="Number of jobs to run", show_default=True)
 @click.option("--config", "-c", type=click.Path(exists=True), default='audioexplorer/algo_config.ini', help="Feature extractor config.")
-@click.option('--single', is_flag=True, help='Produce a single HDF5')
-def process(input, output, jobs, config, single):
+@click.option('--single', "-s", is_flag=True, help='Produce a single HDF5')
+@click.option("--format", "-f", type=click.Choice(['fixed', 'table'], case_sensitive=False), default='fixed', help='HDF5 format')
+def process(input, output, jobs, config, single, format):
     extractor_config = configparser.ConfigParser()
     extractor_config.read(config)
     audio_files = glob.glob(input + '/*.wav', recursive=False)
@@ -49,11 +50,12 @@ def process(input, output, jobs, config, single):
         key = filename_noext.replace('-', '_')
         feats = features.get(y, sr, n_jobs=jobs, **extractor_config)
 
-        if single:
-            feats.to_hdf(output_path, key=key, mode='a', format='fixed')
-        else:
-            output_path_file = os.path.join(output_path, filename_noext + '.h5')
-            feats.to_hdf(output_path_file, key=key, mode='w', format='fixed')
+        if not feats.empty:
+            if single:
+                feats.to_hdf(output_path, key=key, mode='a', format=format)
+            else:
+                output_path_file = os.path.join(output_path, filename_noext + '.h5')
+                feats.to_hdf(output_path_file, key=key, mode='w', format=format)
 
 
 def get_name_from_config(configpath):
