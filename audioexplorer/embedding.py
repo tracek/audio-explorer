@@ -13,11 +13,9 @@ def fit_and_dump(data: np.ndarray, embedding: str, name: str, **kwargs):
 
     if embedding == 'tsne':
         perplexity = kwargs.get('perplexity', 60)
-        n_iter_without_progress = kwargs.get('n_iter_without_progress', 100)
-        tsne_init = kwargs.get('init', 'pca')
+        n_iter_without_progress = kwargs.get('n_iter_without_progress', 50)
         algo = MulticoreTSNE(perplexity=perplexity,
                              n_iter_without_progress=n_iter_without_progress,
-                             init=tsne_init,
                              n_jobs=cpu_count())
     elif embedding == 'umap':
         import umap
