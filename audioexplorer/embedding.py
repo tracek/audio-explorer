@@ -1,7 +1,5 @@
 import numpy as np
 import joblib
-from multiprocessing import cpu_count
-from MulticoreTSNE import MulticoreTSNE
 from sklearn.preprocessing import StandardScaler
 from sklearn.manifold import TSNE
 
@@ -14,9 +12,9 @@ def fit_and_dump(data: np.ndarray, embedding: str, name: str, **kwargs):
     if embedding == 'tsne':
         perplexity = kwargs.get('perplexity', 60)
         n_iter_without_progress = kwargs.get('n_iter_without_progress', 50)
-        algo = MulticoreTSNE(perplexity=perplexity,
-                             n_iter_without_progress=n_iter_without_progress,
-                             n_jobs=cpu_count())
+        algo = TSNE(perplexity=perplexity,
+                    n_iter_without_progress=n_iter_without_progress,
+                    init='pca')
     elif embedding == 'umap':
         import umap
         n_neighbors = kwargs.get('n_neighbors', 10)
