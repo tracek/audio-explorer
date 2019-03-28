@@ -69,10 +69,11 @@ def get_name_from_config(configpath):
 
 @root.command('f2m', help='Features to embedding model')
 @click.option("--input", "-in", type=click.STRING, help="Path to h5 features.", required=True)
-@click.option("--output", "-out", help="Model output path.")
-@click.option("--algo", "-a", type=click.Choice(['tsne', 'umap'], case_sensitive=False),
-              default='tsne', help='Embedding to use')
-def h5_to_embedding(input, output, algo):
+@click.option("--output", "-out", type=click.STRING, help="Output directory.")
+@click.option("--jobs", "-j", type=click.INT, default=-1, help="Number of jobs to run", show_default=True)
+@click.option("--algo", "-a", type=click.Choice(['tsne', 'umap'], case_sensitive=False), default='umap', help='Embedding to use')
+@click.option("--params", "-p", type=click.Path(exists=True), help="JSON with grid search parameters for the embedding algo")
+def h5_to_embedding(input, output, jobs, algo, params):
     if os.path.isfile(input):
         hdf_store = pd.HDFStore(input)
         hdf_keys = hdf_store.keys()
@@ -90,7 +91,7 @@ def h5_to_embedding(input, output, algo):
             output = input
     else:
         raise Exception(f'Input {input} not recognised as file or directory.')
-    embedding.fit_and_dump(dfs.values, embedding=algo, name=output)
+    embedding.fit_and_dump(dfs.values, embedding_type=algo, output_path=output, n_jobs=jobs, grid_path=params)
 
 
 @root.command('m2e', help='Model to embedddings')

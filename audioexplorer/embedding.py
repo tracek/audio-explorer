@@ -1,31 +1,47 @@
+import os
+import json
+import logging
 import numpy as np
 import joblib
+from joblib import Parallel, delayed
+from sklearn.model_selection import ParameterGrid
 from sklearn.preprocessing import StandardScaler
 from sklearn.manifold import TSNE
 
 
-def fit_and_dump(data: np.ndarray, embedding: str, name: str, **kwargs):
-    embedding = embedding.lower()
+def fit_and_dump(data: np.ndarray, embedding_type: str, output_path: str, n_jobs: int=-1, grid_path: str=None):
+    embedding_type = embedding_type.lower()
     scaler = StandardScaler()
     data = scaler.fit_transform(data)
+    os.makedirs(output_path, exist_ok=True)
+    joblib.dump(scaler, filename=os.path.join(output_path, 'scaler.joblib'))
 
-    if embedding == 'tsne':
-        perplexity = kwargs.get('perplexity', 60)
-        n_iter_without_progress = kwargs.get('n_iter_without_progress', 50)
-        algo = TSNE(perplexity=perplexity,
-                    n_iter_without_progress=n_iter_without_progress,
-                    init='pca')
-    elif embedding == 'umap':
-        import umap
-        n_neighbors = kwargs.get('n_neighbors', 10)
-        min_dist = kwargs.get('min_dist', 0.1)
-        metric = kwargs.get('metric', 'euclidean')
-        algo = umap.UMAP(n_neighbors=n_neighbors, min_dist=min_dist, metric=metric, init='random')
+    if grid_path:
+        with open(grid_path) as config_file:
+            grid_dict = json.load(config_file)
+        param_grid = ParameterGrid(grid_dict)
+        if n_jobs == -1:
+            n_jobs = len(param_grid)
+        Parallel(n_jobs=n_jobs, backend='multiprocessing')(delayed(fit_and_save)(
+            data=data, output_dir=output_path, embedding_type=embedding_type, params=params) for params in param_grid)
     else:
-        raise NotImplemented(f'Requested embedding type {embedding} is not implemented')
+        fit_and_save(data=data, embedding_type=embedding_type, params={})
+
+
+def fit_and_save(embedding_type, output_dir, data, params):
+    params_string = '-'.join(['{}_{}'.format(k, v) for k, v in params.items()])
+    logging.info(f'Running {embedding_type} with {params_string}')
+    if embedding_type == 'tsne':
+        algo = TSNE(**params)
+    elif embedding_type == 'umap':
+        import umap
+        algo = umap.UMAP(**params)
+    else:
+        raise NotImplemented(f'Requested embedding type {embedding_type} is not implemented')
 
     fit = algo.fit(data)
-    joblib.dump({'scaler': scaler, 'model': fit}, filename=f'{name}.joblib')
+    output_path = os.path.join(output_dir, embedding_type + '_' + params_string + '.joblib')
+    joblib.dump(fit, filename=output_path)
 
 
 def load_and_transform(data: np.ndarray, name: str) -> np.ndarray:
