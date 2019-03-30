@@ -31,17 +31,21 @@ def fit_and_dump(data: np.ndarray, embedding_type: str, output_path: str, n_jobs
 def fit_and_save(embedding_type, output_dir, data, params):
     params_string = '-'.join(['{}_{}'.format(k, v) for k, v in params.items()])
     logging.info(f'Running {embedding_type} with {params_string}')
-    if embedding_type == 'tsne':
-        algo = TSNE(**params)
-    elif embedding_type == 'umap':
-        import umap
-        algo = umap.UMAP(**params)
-    else:
-        raise NotImplemented(f'Requested embedding type {embedding_type} is not implemented')
+    try:
+        if embedding_type == 'tsne':
+            algo = TSNE(**params)
+        elif embedding_type == 'umap':
+            import umap
+            algo = umap.UMAP(**params)
+        else:
+            raise NotImplemented(f'Requested embedding type {embedding_type} is not implemented')
 
-    fit = algo.fit(data)
-    output_path = os.path.join(output_dir, embedding_type + '_' + params_string + '.joblib')
-    joblib.dump(fit, filename=output_path)
+        fit = algo.fit(data)
+        output_path = os.path.join(output_dir, embedding_type + '_' + params_string + '.joblib')
+        joblib.dump(fit, filename=output_path)
+    except Exception as ex:
+        logging.exception(ex)
+        raise
 
 
 def load_and_transform(data: np.ndarray, name: str) -> np.ndarray:
