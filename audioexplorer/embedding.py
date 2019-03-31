@@ -22,10 +22,10 @@ def fit_and_dump(data: np.ndarray, embedding_type: str, output_path: str, n_jobs
         param_grid = ParameterGrid(grid_dict)
         if n_jobs == -1:
             n_jobs = len(param_grid)
-        Parallel(n_jobs=n_jobs, backend='multiprocessing')(delayed(fit_and_save)(
+        Parallel(n_jobs=n_jobs, backend='loky')(delayed(fit_and_save)(
             data=data, output_dir=output_path, embedding_type=embedding_type, params=params) for params in param_grid)
     else:
-        fit_and_save(data=data, embedding_type=embedding_type, params={})
+        fit_and_save(data=data, output_dir=output_path, embedding_type=embedding_type, params={})
 
 
 def fit_and_save(embedding_type, output_dir, data, params):

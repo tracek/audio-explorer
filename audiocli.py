@@ -14,14 +14,14 @@ from audioexplorer import features, embedding
 
 @click.group()
 @click.option('--quiet', default=False, is_flag=True, help='Run in a silent mode')
-def root(quiet):
+def cli(quiet):
     if quiet:
         logging.basicConfig(stream=sys.stdout, level=logging.ERROR)
     else:
         logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
 
 
-@root.command('a2f', help='Audio to HDF5 features')
+@cli.command('a2f', help='Audio to HDF5 features')
 @click.option("--input", "-in", type=click.STRING, required=True, help="Path to audio.")
 @click.option("--output", "-out", type=click.STRING, default='.', help="Output file or directory.")
 @click.option("--jobs", "-j", type=click.INT, default=1, help="Number of jobs to run", show_default=True)
@@ -67,7 +67,7 @@ def get_name_from_config(configpath):
     return s
 
 
-@root.command('f2m', help='Features to embedding model')
+@cli.command('f2m', help='Features to embedding model')
 @click.option("--input", "-in", type=click.STRING, help="Path to h5 features.", required=True)
 @click.option("--output", "-out", type=click.STRING, help="Output directory.")
 @click.option("--jobs", "-j", type=click.INT, default=-1, help="Number of jobs to run", show_default=True)
@@ -94,7 +94,7 @@ def h5_to_embedding(input, output, jobs, algo, params):
     embedding.fit_and_dump(dfs.values, embedding_type=algo, output_path=output, n_jobs=jobs, grid_path=params)
 
 
-@root.command('m2e', help='Model to embedddings')
+@cli.command('m2e', help='Model to embedddings')
 @click.option("--input", "-i", type=click.Path(exists=True), help="Path to h5 features.", required=True)
 @click.option("--model", "-m", type=click.Path(exists=True), help="Embedding model to use.", required=True)
 @click.option("--output", "-out", help="Embedding output path.")
@@ -108,4 +108,4 @@ def embed_features(input, model, output):
 
 
 if __name__ == '__main__':
-    root()
+    cli()
