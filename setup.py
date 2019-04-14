@@ -9,6 +9,6 @@ setup(
     ],
     entry_points='''
         [console_scripts]
-        audiocli=audiocli:root 
+        audiocli=audiocli:cli 
     ''',
 )

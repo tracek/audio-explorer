@@ -33,7 +33,7 @@ def process(input, output, jobs, config, single, format):
     extractor_config.read(config)
     audio_files = glob.glob(input + '/*.wav', recursive=False)
     config_signature = get_name_from_config(config)
-    
+
     if single:
         os.makedirs(output, exist_ok=True)
         output_path = os.path.join(output, config_signature + '.h5')
@@ -42,7 +42,7 @@ def process(input, output, jobs, config, single, format):
         output_path = os.path.join(output, config_signature)
         os.makedirs(output_path, exist_ok=True)
         shutil.copy(config, output_path)
-    
+
     for wav in audio_files:
         logging.info(f'Processing {wav}')
         y, sr = librosa.load(wav, sr=16000)
@@ -56,15 +56,30 @@ def process(input, output, jobs, config, single, format):
             else:
                 output_path_file = os.path.join(output_path, filename_noext + '.h5')
                 feats.to_hdf(output_path_file, key=key, mode='w', format=format)
+        else:
+            logging.warning(f'No onsets found in {wav}')
 
 
-def get_name_from_config(configpath):
-    algo_config = configparser.ConfigParser()
-    algo_config.read(configpath)
-    c = algo_config['DEFAULT']
-    s = f'block-{c["block_size"]}_step-{c["step_size"]}_len-{c["sample_len"]}_onsthr-{c["onset_threshold"]}' \
-        f'_onssil-{c["onset_silence_threshold"][1:]}_onsmin-{c["min_duration_s"]}_low-{c["lowcut"]}_high-{c["highcut"]}'
-    return s
+@cli.command('a2f-multi', help='Audio to HDF5 features, but runs multiple files at the same time.')
+@click.option("--input", "-in", type=click.STRING, required=True, help="Path to audio.")
+@click.option("--output", "-out", type=click.STRING, default='.', help="Output file or directory.")
+@click.option("--jobs", "-j", type=click.INT, default=1, help="Number of jobs to run", show_default=True)
+@click.option("--config", "-c", type=click.Path(exists=True), default='audioexplorer/algo_config.ini',
+              help="Feature extractor config.")
+@click.option("--format", "-f", type=click.Choice(['fixed', 'table'], case_sensitive=False), default='fixed', help='HDF5 format')
+def process(input, output, jobs, config, single, format):
+    from joblib import Parallel, delayed
+    extractor_config = configparser.ConfigParser()
+    extractor_config.read(config)
+    audio_files = glob.glob(input + '/*.wav', recursive=False)
+    config_signature = get_name_from_config(config)
+
+    output_path = os.path.join(output, config_signature)
+    os.makedirs(output_path, exist_ok=True)
+    shutil.copy(config, output_path)
+
+    Parallel(n_jobs=jobs, backend='multiprocessing')(delayed(process_parallel)(
+        path=wav_path, extractor_config=extractor_config, output_path=output_path) for wav_path in audio_files)
 
 
 @cli.command('f2m', help='Features to embedding model')
@@ -105,6 +120,31 @@ def embed_features(input, model, output):
     if not output:
         output = os.path.splitext(input)[0] + '.csv'
     df_emb.to_csv(output, index=False)
+
+
+def process_parallel(path, extractor_config, output_path):
+    logging.info(f'Processing {path}')
+    y, sr = librosa.load(path, sr=16000)
+    filename_noext = os.path.splitext(os.path.basename(path))[0]
+    key = filename_noext.replace('-', '_')
+    feats = features.get(y, sr, n_jobs=1, **extractor_config)
+
+    if not feats.empty:
+        output_path_file = os.path.join(output_path, filename_noext + '.h5')
+        feats.to_hdf(output_path_file, key=key, mode='w', format=format)
+    else:
+        logging.warning(f'No onsets found in {path}')
+        with open(os.path.join(output_path, 'empty.log'), 'a') as f:
+            f.write(path + '\n')
+
+
+def get_name_from_config(configpath):
+    algo_config = configparser.ConfigParser()
+    algo_config.read(configpath)
+    c = algo_config['DEFAULT']
+    s = f'block-{c["block_size"]}_step-{c["step_size"]}_len-{c["sample_len"]}_onsthr-{c["onset_threshold"]}' \
+        f'_onssil-{c["onset_silence_threshold"][1:]}_onsmin-{c["min_duration_s"]}_low-{c["lowcut"]}_high-{c["highcut"]}'
+    return s
 
 
 if __name__ == '__main__':
