@@ -9,6 +9,7 @@ import librosa
 import configparser
 import logging
 import pandas as pd
+from joblib import Parallel, delayed
 from audioexplorer import features, embedding
 
 
@@ -67,8 +68,7 @@ def process(input, output, jobs, config, single, format):
 @click.option("--config", "-c", type=click.Path(exists=True), default='audioexplorer/algo_config.ini',
               help="Feature extractor config.")
 @click.option("--format", "-f", type=click.Choice(['fixed', 'table'], case_sensitive=False), default='fixed', help='HDF5 format')
-def process(input, output, jobs, config, single, format):
-    from joblib import Parallel, delayed
+def process_multi(input, output, jobs, config, format):
     extractor_config = configparser.ConfigParser()
     extractor_config.read(config)
     audio_files = glob.glob(input + '/*.wav', recursive=False)
@@ -79,7 +79,7 @@ def process(input, output, jobs, config, single, format):
     shutil.copy(config, output_path)
 
     Parallel(n_jobs=jobs, backend='multiprocessing')(delayed(process_parallel)(
-        path=wav_path, extractor_config=extractor_config, output_path=output_path) for wav_path in audio_files)
+        path=wav_path, extractor_config=extractor_config, output_path=output_path, hdf_format=format) for wav_path in audio_files)
 
 
 @cli.command('f2m', help='Features to embedding model')
@@ -122,7 +122,7 @@ def embed_features(input, model, output):
     df_emb.to_csv(output, index=False)
 
 
-def process_parallel(path, extractor_config, output_path):
+def process_parallel(path, extractor_config, output_path, hdf_format):
     logging.info(f'Processing {path}')
     y, sr = librosa.load(path, sr=16000)
     filename_noext = os.path.splitext(os.path.basename(path))[0]
@@ -131,7 +131,7 @@ def process_parallel(path, extractor_config, output_path):
 
     if not feats.empty:
         output_path_file = os.path.join(output_path, filename_noext + '.h5')
-        feats.to_hdf(output_path_file, key=key, mode='w', format=format)
+        feats.to_hdf(output_path_file, key=key, mode='w', format=hdf_format)
     else:
         logging.warning(f'No onsets found in {path}')
         with open(os.path.join(output_path, 'empty.log'), 'a') as f:
