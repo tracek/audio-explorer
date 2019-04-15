@@ -23,16 +23,22 @@ def cli(quiet):
 
 
 @cli.command('a2f', help='Audio to HDF5 features')
-@click.option("--input", "-in", type=click.STRING, required=True, help="Path to audio.")
-@click.option("--output", "-out", type=click.STRING, default='.', help="Output file or directory.")
-@click.option("--jobs", "-j", type=click.INT, default=1, help="Number of jobs to run", show_default=True)
-@click.option("--config", "-c", type=click.Path(exists=True), default='audioexplorer/algo_config.ini', help="Feature extractor config.")
+@click.option("--input", "-in", type=click.STRING, required=True, help="Path to audio in WAV format.")
+@click.option("--output", "-out", type=click.STRING, default='.', help="Output file or directory. If directory does "
+              "not exist it will be created. The output files will have the same base name as input.")
+@click.option("--jobs", "-j", type=click.INT, default=-1, help="Number of jobs to run. Defaults to all cores",
+              show_default=True)
+@click.option("--config", "-c", type=click.Path(exists=True), default='audioexplorer/algo_config.ini',
+              help="Feature extractor config.")
 @click.option('--single', "-s", is_flag=True, help='Produce a single HDF5')
-@click.option("--format", "-f", type=click.Choice(['fixed', 'table'], case_sensitive=False), default='fixed', help='HDF5 format')
+@click.option("--format", "-f", type=click.Choice(['fixed', 'table'], case_sensitive=False), default='fixed',
+              help='HDF5 format')
 def process(input, output, jobs, config, single, format):
     extractor_config = configparser.ConfigParser()
     extractor_config.read(config)
     audio_files = glob.glob(input + '/*.wav', recursive=False)
+    if not audio_files:
+        logging.error(f'No wave files ')
     config_signature = get_name_from_config(config)
 
     if single:
@@ -61,12 +67,12 @@ def process(input, output, jobs, config, single, format):
             logging.warning(f'No onsets found in {wav}')
 
 
-@cli.command('a2f-multi', help='Audio to HDF5 features, but runs multiple files at the same time.')
+@cli.command('a2f-multi', help='Audio to HDF5 features, runs multiple files at the same time. Heavy on memory.')
 @click.option("--input", "-in", type=click.STRING, required=True, help="Path to audio.")
 @click.option("--output", "-out", type=click.STRING, default='.', help="Output file or directory.")
-@click.option("--jobs", "-j", type=click.INT, default=1, help="Number of jobs to run", show_default=True)
+@click.option("--jobs", "-j", type=click.INT, default=-1, help="Number of jobs to run", show_default=True)
 @click.option("--config", "-c", type=click.Path(exists=True), default='audioexplorer/algo_config.ini',
-              help="Feature extractor config.")
+              help="Path to config file.")
 @click.option("--format", "-f", type=click.Choice(['fixed', 'table'], case_sensitive=False), default='fixed', help='HDF5 format')
 def process_multi(input, output, jobs, config, format):
     extractor_config = configparser.ConfigParser()
@@ -79,7 +85,8 @@ def process_multi(input, output, jobs, config, format):
     shutil.copy(config, output_path)
 
     Parallel(n_jobs=jobs, backend='multiprocessing')(delayed(process_parallel)(
-        path=wav_path, extractor_config=extractor_config, output_path=output_path, hdf_format=format) for wav_path in audio_files)
+        path=wav_path, extractor_config=extractor_config['DEFAULT'], output_path=output_path, hdf_format=format)
+        for wav_path in audio_files)
 
 
 @cli.command('f2m', help='Features to embedding model')

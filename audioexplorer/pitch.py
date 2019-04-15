@@ -4,7 +4,7 @@ import pandas as pd
 import scipy.stats as stats
 
 
-def get_pitch_stats(signal: np.ndarray, fs: int, block_size: int, hop: int, tolerance: float = 0.6) -> dict:
+def get_pitch_stats(signal: np.ndarray, fs: int, block_size: int, hop: int, tolerance: float = 0.5) -> dict:
     """
     Get basic statistic on pitch in the given signal
     :param signal: 1-d signal
@@ -19,22 +19,22 @@ def get_pitch_stats(signal: np.ndarray, fs: int, block_size: int, hop: int, tole
     pitch_o.set_tolerance(tolerance)
     signal_win = np.array_split(signal, np.arange(hop, len(signal), hop))
 
-    pitch = []
-    for frame in signal_win:
+    pitch_array = []
+    for frame in signal_win[:-1]:
         pitch = pitch_o(frame)[0]
         confidence = pitch_o.get_confidence()
         if confidence > tolerance:
-            pitch.append(pitch)
+            pitch_array.append(pitch)
 
-    if pitch:
-        pitch = np.array(pitch)
-        Q25, Q50, Q75 = np.quantile(pitch, [0.25, 0.5, 0.75])
+    if pitch_array:
+        pitch_array = np.array(pitch_array)
+        Q25, Q50, Q75 = np.quantile(pitch_array, [0.25, 0.5, 0.75])
         IQR = Q75 - Q25
-        skew = stats.skew(pitch)
-        kurt = stats.kurtosis(pitch)
-        median = np.median(pitch)
-        mode = stats.mode(pitch)
-        sd = np.std(pitch)
+        skew = stats.skew(pitch_array)
+        kurt = stats.kurtosis(pitch_array)
+        median = np.median(pitch_array)
+        # mode = stats.mode(pitch_array)[0]
+        sd = np.std(pitch_array)
     else:
         Q25 = 0
         Q50 = 0
@@ -50,7 +50,7 @@ def get_pitch_stats(signal: np.ndarray, fs: int, block_size: int, hop: int, tole
         'pitch_mean': Q50,
         'pitch_sd': sd,
         'pitch_median': median,
-        'pitch_mode': mode,
+#        'pitch_mode': mode,
         'pitch_Q25': Q25,
         'pitch_Q75': Q75,
         'pitch_IQR': IQR,
@@ -61,7 +61,7 @@ def get_pitch_stats(signal: np.ndarray, fs: int, block_size: int, hop: int, tole
     return pitchstats
 
 
-def get_pitch_stats_series(signal: np.ndarray, fs: int, block_size: int, hop: int, tolerance: float = 0.6) -> pd.Series:
+def get_pitch_stats_series(signal: np.ndarray, fs: int, block_size: int, hop: int, tolerance: float = 0.5) -> pd.Series:
     """
     Get basic statistic on pitch in the given signal
     :param signal: 1-d signal
