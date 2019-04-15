@@ -1,6 +1,6 @@
 import numpy as np
 import pandas as pd
-from joblib import Parallel, delayed
+from joblib import Parallel, delayed, cpu_count
 from audioexplorer import specprop, pitch
 from audioexplorer.onsets import OnsetDetector
 from audioexplorer.filters import frequency_filter
@@ -42,6 +42,8 @@ def _split_audio_into_chunks_by_onsets(X: np.ndarray, fs: int, onsets: np.ndarra
         end = int((onset + sample_len) * fs)
         samples.append(X[start: end])
     samples = np.array(samples)
+    if split == -1:
+        split = cpu_count()
     if split > 1:
         samples = np.array_split(samples, split)
     return samples

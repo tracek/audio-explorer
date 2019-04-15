@@ -4,6 +4,7 @@ import os
 import sys
 import shutil
 import glob
+import time
 import click
 import librosa
 import configparser
@@ -30,63 +31,66 @@ def cli(quiet):
               show_default=True)
 @click.option("--config", "-c", type=click.Path(exists=True), default='audioexplorer/algo_config.ini',
               help="Feature extractor config.")
-@click.option('--single', "-s", is_flag=True, help='Produce a single HDF5')
+@click.option('--multi', "-m", is_flag=True, help='Process audio files in parallel. The setting will produce an HDF5 '
+              'file per input, with the same base name. Large memory footprint. If not set, a single output file will '
+              'be produced.')
 @click.option("--format", "-f", type=click.Choice(['fixed', 'table'], case_sensitive=False), default='fixed',
-              help='HDF5 format')
-def process(input, output, jobs, config, single, format):
+              help='HDF5 format. Table is slightly slower and requires pytables (will not work outside Python), '
+                   'but allows to read specific columns.')
+def process(input, output, jobs, config, multi, format):
+    start_time = time.time()
     extractor_config = configparser.ConfigParser()
     extractor_config.read(config)
     audio_files = glob.glob(input + '/*.wav', recursive=False)
     if not audio_files:
-        logging.error(f'No wave files ')
+        logging.error(f'No wave files on {input}')
     config_signature = get_name_from_config(config)
 
-    if single:
-        os.makedirs(output, exist_ok=True)
-        output_path = os.path.join(output, config_signature + '.h5')
-        shutil.copy(config, output)
-    else:
+    if multi:
         output_path = os.path.join(output, config_signature)
         os.makedirs(output_path, exist_ok=True)
         shutil.copy(config, output_path)
+        Parallel(n_jobs=jobs, backend='multiprocessing')(delayed(process_path)(
+            path=wav_path,
+            extractor_config=extractor_config['DEFAULT'],
+            output_path=output_path,
+            hdf_format=format,
+            multi=multi,
+            jobs=1) for wav_path in audio_files)
+    else:
+        os.makedirs(output, exist_ok=True)
+        output_path = os.path.join(output, config_signature + '.h5')
+        shutil.copy(config, output)
+        for wav in audio_files:
+            process_path(path=wav,
+                         extractor_config=extractor_config['DEFAULT'],
+                         output_path=output_path,
+                         hdf_format=format,
+                         multi=multi,
+                         jobs=jobs)
+    logging.info(f'Completed processing in {time.time() - start_time:.2f}s')
 
-    for wav in audio_files:
-        logging.info(f'Processing {wav}')
-        y, sr = librosa.load(wav, sr=16000)
-        filename_noext = os.path.splitext(os.path.basename(wav))[0]
-        key = filename_noext.replace('-', '_')
+
+def process_path(path, extractor_config, output_path, hdf_format, multi, jobs):
+    logging.info(f'Processing {path}')
+    y, sr = librosa.load(path, sr=16000)
+    filename_noext = os.path.splitext(os.path.basename(path))[0]
+    key = filename_noext.replace('-', '_')
+
+    if multi:
+        mode = 'w'
+        feats = features.get(y, sr, n_jobs=1, **extractor_config)
+        output_path = os.path.join(output_path, filename_noext + '.h5')
+    else:
+        mode = 'a'
         feats = features.get(y, sr, n_jobs=jobs, **extractor_config)
 
-        if not feats.empty:
-            if single:
-                feats.to_hdf(output_path, key=key, mode='a', format=format)
-            else:
-                output_path_file = os.path.join(output_path, filename_noext + '.h5')
-                feats.to_hdf(output_path_file, key=key, mode='w', format=format)
-        else:
-            logging.warning(f'No onsets found in {wav}')
-
-
-@cli.command('a2f-multi', help='Audio to HDF5 features, runs multiple files at the same time. Heavy on memory.')
-@click.option("--input", "-in", type=click.STRING, required=True, help="Path to audio.")
-@click.option("--output", "-out", type=click.STRING, default='.', help="Output file or directory.")
-@click.option("--jobs", "-j", type=click.INT, default=-1, help="Number of jobs to run", show_default=True)
-@click.option("--config", "-c", type=click.Path(exists=True), default='audioexplorer/algo_config.ini',
-              help="Path to config file.")
-@click.option("--format", "-f", type=click.Choice(['fixed', 'table'], case_sensitive=False), default='fixed', help='HDF5 format')
-def process_multi(input, output, jobs, config, format):
-    extractor_config = configparser.ConfigParser()
-    extractor_config.read(config)
-    audio_files = glob.glob(input + '/*.wav', recursive=False)
-    config_signature = get_name_from_config(config)
-
-    output_path = os.path.join(output, config_signature)
-    os.makedirs(output_path, exist_ok=True)
-    shutil.copy(config, output_path)
-
-    Parallel(n_jobs=jobs, backend='multiprocessing')(delayed(process_parallel)(
-        path=wav_path, extractor_config=extractor_config['DEFAULT'], output_path=output_path, hdf_format=format)
-        for wav_path in audio_files)
+    if not feats.empty:
+        feats.to_hdf(output_path, key=key, mode=mode, format=hdf_format)
+    else:
+        logging.warning(f'No onsets found in {path}')
+        with open(os.path.join(output_path, 'empty.log'), 'a') as f:
+            f.write(path + '\n')
 
 
 @cli.command('f2m', help='Features to embedding model')
@@ -127,22 +131,6 @@ def embed_features(input, model, output):
     if not output:
         output = os.path.splitext(input)[0] + '.csv'
     df_emb.to_csv(output, index=False)
-
-
-def process_parallel(path, extractor_config, output_path, hdf_format):
-    logging.info(f'Processing {path}')
-    y, sr = librosa.load(path, sr=16000)
-    filename_noext = os.path.splitext(os.path.basename(path))[0]
-    key = filename_noext.replace('-', '_')
-    feats = features.get(y, sr, n_jobs=1, **extractor_config)
-
-    if not feats.empty:
-        output_path_file = os.path.join(output_path, filename_noext + '.h5')
-        feats.to_hdf(output_path_file, key=key, mode='w', format=hdf_format)
-    else:
-        logging.warning(f'No onsets found in {path}')
-        with open(os.path.join(output_path, 'empty.log'), 'a') as f:
-            f.write(path + '\n')
 
 
 def get_name_from_config(configpath):
