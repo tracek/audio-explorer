@@ -62,8 +62,9 @@ def process(input, output, jobs, config, multi, format):
             config_signature = get_name_from_config(config)
             logging.warning(f'Supplied path {output} is a directory. Output file named {config_signature} will be '
                             f'created for feature output.')
-        for wav in audio_files:
-            process_path(input_path=wav,
+            output = os.path.join(output, config_signature)
+        for wav_path in audio_files:
+            process_path(input_path=wav_path,
                          extractor_config=extractor_config['DEFAULT'],
                          output_path=output,
                          hdf_format=format,
