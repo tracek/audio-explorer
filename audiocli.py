@@ -51,7 +51,7 @@ def process(input, output, jobs, config, multi, format):
 
     if multi:
         Parallel(n_jobs=jobs, backend='multiprocessing')(delayed(process_path)(
-            path=wav_path,
+            input_path=wav_path,
             extractor_config=extractor_config['DEFAULT'],
             output_path=output,
             hdf_format=format,
