@@ -17,6 +17,7 @@ from audioexplorer import features, embedding
 @click.group()
 @click.option('--quiet', default=False, is_flag=True, help='Run in a silent mode')
 def cli(quiet):
+    """audiocli is a command line program that helps in extracting """
     if quiet:
         logging.basicConfig(stream=sys.stdout, level=logging.ERROR)
     else:
@@ -44,53 +45,54 @@ def process(input, output, jobs, config, multi, format):
     audio_files = glob.glob(input + '/*.wav', recursive=False)
     if not audio_files:
         logging.error(f'No wave files on {input}')
-    config_signature = get_name_from_config(config)
+
+    os.makedirs(output, exist_ok=True)
+    shutil.copy(config, output)
 
     if multi:
-        output_path = os.path.join(output, config_signature)
-        os.makedirs(output_path, exist_ok=True)
-        shutil.copy(config, output_path)
         Parallel(n_jobs=jobs, backend='multiprocessing')(delayed(process_path)(
             path=wav_path,
             extractor_config=extractor_config['DEFAULT'],
-            output_path=output_path,
+            output_path=output,
             hdf_format=format,
             multi=multi,
             jobs=1) for wav_path in audio_files)
     else:
-        os.makedirs(output, exist_ok=True)
-        output_path = os.path.join(output, config_signature + '.h5')
-        shutil.copy(config, output)
+        if os.path.isdir(output):
+            config_signature = get_name_from_config(config)
+            logging.warning(f'Supplied path {output} is a directory. Output file named {config_signature} will be '
+                            f'created for feature output.')
         for wav in audio_files:
-            process_path(path=wav,
+            process_path(input_path=wav,
                          extractor_config=extractor_config['DEFAULT'],
-                         output_path=output_path,
+                         output_path=output,
                          hdf_format=format,
                          multi=multi,
                          jobs=jobs)
     logging.info(f'Completed processing in {time.time() - start_time:.2f}s')
 
 
-def process_path(path, extractor_config, output_path, hdf_format, multi, jobs):
-    logging.info(f'Processing {path}')
-    y, sr = librosa.load(path, sr=16000)
-    filename_noext = os.path.splitext(os.path.basename(path))[0]
+def process_path(input_path, extractor_config, output_path, hdf_format, multi, jobs):
+    logging.info(f'Processing {input_path}')
+    y, sr = librosa.load(input_path, sr=16000)
+    filename_noext = os.path.splitext(os.path.basename(input_path))[0]
     key = filename_noext.replace('-', '_')
 
     if multi:
         mode = 'w'
         feats = features.get(y, sr, n_jobs=1, **extractor_config)
-        output_path = os.path.join(output_path, filename_noext + '.h5')
+        output_file = os.path.join(output_path, filename_noext + '.h5')
     else:
         mode = 'a'
         feats = features.get(y, sr, n_jobs=jobs, **extractor_config)
+        output_file = output_path
 
     if not feats.empty:
         feats.to_hdf(output_path, key=key, mode=mode, format=hdf_format)
     else:
-        logging.warning(f'No onsets found in {path}')
+        logging.warning(f'No onsets found in {input_path}')
         with open(os.path.join(output_path, 'empty.log'), 'a') as f:
-            f.write(path + '\n')
+            f.write(input_path + '\n')
 
 
 @cli.command('f2m', help='Features to embedding model')
