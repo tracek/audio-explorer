@@ -88,7 +88,7 @@ def process_path(input_path, extractor_config, output_path, hdf_format, multi, j
         output_file = output_path
 
     if not feats.empty:
-        feats.to_hdf(output_path, key=key, mode=mode, format=hdf_format)
+        feats.to_hdf(output_file, key=key, mode=mode, format=hdf_format)
     else:
         logging.warning(f'No onsets found in {input_path}')
         with open(os.path.join(output_path, 'empty.log'), 'a') as f:
