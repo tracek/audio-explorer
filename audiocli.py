@@ -46,9 +46,12 @@ def process(input, output, jobs, config, multi, format):
     if not audio_files:
         logging.error(f'No wave files on {input}')
 
-    if os.path.dirname(output):
+    outdir = os.path.dirname(output)
+    if outdir:
         os.makedirs(os.path.dirname(output), exist_ok=True)
-    shutil.copy(config, output)
+        shutil.copy(config, outdir)
+    else:
+        shutil.copy(config, '.')
 
     if multi:
         Parallel(n_jobs=jobs, backend='multiprocessing')(delayed(process_path)(
