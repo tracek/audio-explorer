@@ -59,10 +59,8 @@ def process(input, output, jobs, config, multi, format):
             jobs=1) for wav_path in audio_files)
     else:
         if os.path.isdir(output):
-            config_signature = get_name_from_config(config)
-            logging.warning(f'Supplied path {output} is a directory. Output file named {config_signature} will be '
-                            f'created for feature output.')
-            output = os.path.join(output, config_signature)
+            logging.error(f'Supplied path {output} is a directory. Please supply a file name.')
+            sys.exit(1)
         for wav_path in audio_files:
             process_path(input_path=wav_path,
                          extractor_config=extractor_config['DEFAULT'],
