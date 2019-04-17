@@ -46,7 +46,8 @@ def process(input, output, jobs, config, multi, format):
     if not audio_files:
         logging.error(f'No wave files on {input}')
 
-    os.makedirs(os.path.dirname(output), exist_ok=True)
+    if os.path.dirname(output):
+        os.makedirs(os.path.dirname(output), exist_ok=True)
     shutil.copy(config, output)
 
     if multi:
