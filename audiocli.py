@@ -94,7 +94,8 @@ def process_path(input_path, extractor_config, output_path, hdf_format, multi, j
         feats.to_hdf(output_file, key=key, mode=mode, format=hdf_format)
     else:
         logging.warning(f'No onsets found in {input_path}')
-        with open(os.path.join(output_path, 'empty.log'), 'a') as f:
+        outdir = os.path.dirname(output_path)
+        with open(os.path.join(outdir, 'empty.log'), 'a') as f:
             f.write(input_path + '\n')
 
 
