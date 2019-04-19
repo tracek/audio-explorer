@@ -1,7 +1,7 @@
 import numpy as np
 import pandas as pd
 from joblib import Parallel, delayed, cpu_count
-from audioexplorer import specprop, pitch
+from audioexplorer import specprop, pitchprop, melprop
 from audioexplorer.onsets import OnsetDetector
 from audioexplorer.filters import frequency_filter
 from audioexplorer.yaafe_wrapper import YaafeWrapper
@@ -19,8 +19,8 @@ class FeatureExtractor(object):
 
     def get_features(self, sample: np.ndarray) -> pd.DataFrame:
         spectral_props = specprop.spectral_statistics_series(sample, self.fs, lowcut=500)
-        pitch_stats = pitch.get_pitch_stats_series(sample, self.fs, block_size=self.block_size, hop=self.step_size)
-        mfccs = specprop.mel_frequency_cepstral_coefficients(sample, self.fs, block_size=self.block_size, step_size=self.step_size)
+        pitch_stats = pitchprop.get_pitch_stats_series(sample, self.fs, block_size=self.block_size, hop=self.step_size)
+        mfccs = melprop.mel_frequency_cepstral_coefficients(sample, self.fs, block_size=self.block_size, step_size=self.step_size)
         yaafe = self.yaafe.get_mean_features_as_series(sample)
         r = pd.concat([spectral_props, mfccs, pitch_stats, yaafe])
         return r
