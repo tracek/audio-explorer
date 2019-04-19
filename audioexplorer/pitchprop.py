@@ -40,7 +40,6 @@ def get_pitch_stats(signal: np.ndarray, fs: int, block_size: int, hop: int, tole
         Q75 = 0
         sd = 0
         median = 0
-        mode = 0
         IQR = 0
         skew = 0
         kurt = 0
