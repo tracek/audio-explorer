@@ -46,11 +46,12 @@ class YaafeWrapper(object):
         features = self.engine.processAudio(audio_data.reshape(1, -1).astype('float64'))
 
         flat_dict = {}
+        prefix = 'yaafe'
         for name, values in features.items():
             if values.shape[1] == 1:
-                flat_dict[name] = values.mean()
+                flat_dict[f'{prefix}_{name}'] = values.mean()
             else:
-                d = {f'{name}.{idx}': value for idx, value in enumerate(list(values.mean(axis=0)))}
+                d = {f'{prefix}_{name}.{idx}': value for idx, value in enumerate(list(values.mean(axis=0)))}
                 flat_dict.update(d)
         return flat_dict
 

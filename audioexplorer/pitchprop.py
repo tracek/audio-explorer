@@ -33,7 +33,6 @@ def get_pitch_stats(signal: np.ndarray, fs: int, block_size: int, hop: int, tole
         skew = stats.skew(pitch_array)
         kurt = stats.kurtosis(pitch_array)
         median = np.median(pitch_array)
-        # mode = stats.mode(pitch_array)[0]
         sd = np.std(pitch_array)
     else:
         Q25 = 0
@@ -50,7 +49,6 @@ def get_pitch_stats(signal: np.ndarray, fs: int, block_size: int, hop: int, tole
         'pitch_mean': Q50,
         'pitch_sd': sd,
         'pitch_median': median,
-#        'pitch_mode': mode,
         'pitch_Q25': Q25,
         'pitch_Q75': Q75,
         'pitch_IQR': IQR,

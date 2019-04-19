@@ -21,9 +21,10 @@ def mel_frequency_cepstral_coefficients(y: np.ndarray, fs: int, n_mfcc=13, block
     delta2_mfcc = librosa.feature.delta(mfcc, order=2, mode='nearest')
     feature_vector = np.concatenate((np.mean(mfcc, 1), np.mean(delta_mfcc, 1), np.mean(delta2_mfcc, 1)))
 
-    mfcc_names = [f'mfcc_d0.{idx}' for idx in range(1, n_mfcc + 1)]
-    mfcc_delta_names = [f'mfcc_d1.{idx}' for idx in range(1, n_mfcc + 1)]
-    mfcc_delta2_names = [f'mfcc_d2.{idx}' for idx in range(1, n_mfcc + 1)]
+    prefix = 'mfcc'
+    mfcc_names = [f'{prefix}_d0.{idx}' for idx in range(1, n_mfcc + 1)]
+    mfcc_delta_names = [f'{prefix}_d1.{idx}' for idx in range(1, n_mfcc + 1)]
+    mfcc_delta2_names = [f'{prefix}_d2.{idx}' for idx in range(1, n_mfcc + 1)]
 
     # feature_vector = (feature_vector-np.mean(feature_vector)) / np.std(feature_vector)
     feature_vector = pd.Series(data=feature_vector, index=mfcc_names+mfcc_delta_names+mfcc_delta2_names)
