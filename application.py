@@ -161,7 +161,8 @@ def plot_embeddings(filename):
     if filename is not None:
         filepath = 'uploads/' + filename
         fs, X = read_wave_local(filepath)
-        features = get(X, fs, n_jobs=1)
+        features = get(X, fs, n_jobs=1, lowcut=500, highcut=6000, block_size=1024, onset_detector_type='hfc',
+                       onset_silence_threshold=-90, onset_threshold=0.01, min_duration_s=0.15, sample_len=0.26)
         features_for_emb = features.drop(columns=['onset', 'offset'])
         embeddings = get_embeddings(features_for_emb, type='tsne', perplexity=60)
         # features.insert(0, column='filename', value=filenames[-1])
