@@ -20,17 +20,12 @@ def spectral_statistics(y: np.ndarray, fs: int, lowcut: int = 0) -> dict:
 
     amp = spec / spec.sum()
     mean = (freq * amp).sum()
-    sd = np.sqrt(np.sum(amp * ((freq - mean) ** 2)))
     amp_cumsum = np.cumsum(amp)
     median = freq[len(amp_cumsum[amp_cumsum <= 0.5]) + 1]
     mode = freq[amp.argmax()]
     Q25 = freq[len(amp_cumsum[amp_cumsum <= 0.25]) + 1]
     Q75 = freq[len(amp_cumsum[amp_cumsum <= 0.75]) + 1]
     IQR = Q75 - Q25
-    z = amp - amp.mean()
-    w = amp.std()
-    skew = ((z ** 3).sum() / (len(spec) - 1)) / w ** 3
-    kurt = ((z ** 4).sum() / (len(spec) - 1)) / w ** 4
 
     prefix = 'freq'
     top_peaks_ordered_by_power = {f'{prefix}_peak.1': 0, f'{prefix}_peak.2': 0, f'{prefix}_peak.3': 0}
@@ -45,14 +40,11 @@ def spectral_statistics(y: np.ndarray, fs: int, lowcut: int = 0) -> dict:
 
     specprops = {
         f'{prefix}_mean': mean,
-        f'{prefix}_sd': sd,
         f'{prefix}_median': median,
         f'{prefix}_mode': mode,
         f'{prefix}_Q25': Q25,
         f'{prefix}_Q75': Q75,
-        f'{prefix}_IQR': IQR,
-        f'{prefix}_skew': skew,
-        f'{prefix}_kurt': kurt
+        f'{prefix}_IQR': IQR
     }
     specprops.update(top_peaks_ordered_by_power)
     return specprops

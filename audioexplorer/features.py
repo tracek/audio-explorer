@@ -9,7 +9,7 @@ from audioexplorer.yaafe_wrapper import YaafeWrapper
 
 class FeatureExtractor(object):
 
-    def __init__(self, fs: int, block_size: int=512, step_size: int=None):
+    def __init__(self, fs: int, block_size: int=1024, step_size: int=None):
 
         self.fs = fs
         self.block_size = block_size
@@ -18,11 +18,11 @@ class FeatureExtractor(object):
             self.step_size = block_size // 2
 
     def get_features(self, sample: np.ndarray) -> pd.DataFrame:
-        spectral_props = specprop.spectral_statistics_series(sample, self.fs, lowcut=500)
+        spectral_props = specprop.spectral_statistics_series(sample, self.fs, lowcut=400)
         pitch_stats = pitchprop.get_pitch_stats_series(sample, self.fs, block_size=self.block_size, hop=self.step_size)
-        mfccs = melprop.mel_frequency_cepstral_coefficients(sample, self.fs, block_size=self.block_size, step_size=self.step_size)
+        # mfccs = melprop.mel_frequency_cepstral_coefficients(sample, self.fs, block_size=self.block_size, step_size=self.step_size)
         yaafe = self.yaafe.get_mean_features_as_series(sample)
-        r = pd.concat([spectral_props, mfccs, pitch_stats, yaafe])
+        r = pd.concat([spectral_props, pitch_stats, yaafe])
         return r
 
 

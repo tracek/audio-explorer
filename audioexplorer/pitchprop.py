@@ -41,8 +41,6 @@ def get_pitch_stats(signal: np.ndarray, fs: int, block_size: int, hop: int, tole
         sd = 0
         median = 0
         IQR = 0
-        skew = 0
-        kurt = 0
 
     pitchstats = {
         'pitch_mean': Q50,
@@ -50,9 +48,7 @@ def get_pitch_stats(signal: np.ndarray, fs: int, block_size: int, hop: int, tole
         'pitch_median': median,
         'pitch_Q25': Q25,
         'pitch_Q75': Q75,
-        'pitch_IQR': IQR,
-        'pitch_skew': skew,
-        'pitch_kurt': kurt
+        'pitch_IQR': IQR
     }
 
     return pitchstats
