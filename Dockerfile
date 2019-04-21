@@ -16,12 +16,9 @@ RUN conda install -c conda-forge --quiet --yes \
     boto3=1.9.107 \
     umap-learn=0.3.7
 
-RUN pip install --no-cache-dir dash_audio_components dash_resumable_upload \
-    dash==0.39.0 \
-    dash-html-components==0.14.0 \
-    dash-core-components==0.44 \
-    dash-table==3.6.0 \
-    plotly==3.6.1 \
+RUN pip install --no-cache-dir dash_audio_components dash_large_upload \
+    dash==0.41.0 \
+    plotly==3.8.1 \
     sox==1.3.7
 
 COPY . /app
