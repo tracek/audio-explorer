@@ -2,7 +2,7 @@ import os
 import boto3
 import dash
 import dash_audio_components
-import dash_resumable_upload
+import dash_large_upload
 import dash_core_components as dcc
 import dash_html_components as html
 from datetime import datetime
@@ -19,7 +19,7 @@ from audioexplorer.visualize import make_scatterplot, specgram_base64
 
 
 app = dash.Dash(__name__, external_stylesheets=['https://codepen.io/chriddyp/pen/bWLwgP.css', "https://codepen.io/chriddyp/pen/brPBPO.css"])
-dash_resumable_upload.decorate_server(app.server, "uploads")
+dash_large_upload.decorate_server(app.server, "uploads")
 application = app.server
 
 with open('app_description.md', 'r') as file:
@@ -77,7 +77,7 @@ app.layout = html.Div(
             ]),
             html.Div(className="four columns", children=[
                 html.Div(id='upload-completed'),
-                dash_resumable_upload.Upload(
+                dash_large_upload.Upload(
                     id='upload-data',
                     maxFiles=1,
                     simultaneousUploads=1,
@@ -167,7 +167,7 @@ def plot_embeddings(filename):
         embeddings = get_embeddings(features_for_emb, type='tsne', perplexity=60)
         # features.insert(0, column='filename', value=filenames[-1])
         extra_data = ['onset', 'offset']
-        mean_freq = features['stat_median'].astype(int).astype(str) + ' Hz'
+        mean_freq = features['freq_mean'].astype(int).astype(str) + ' Hz'
         figure = make_scatterplot(x=embeddings[:, 0], y=embeddings[:, 1],
                                   customdata=features[extra_data],
                                   text=mean_freq)
