@@ -2,7 +2,7 @@ import os
 import boto3
 import dash
 import dash_audio_components
-import dash_large_upload
+import dash_upload_components
 import dash_core_components as dcc
 import dash_html_components as html
 from datetime import datetime
@@ -19,7 +19,7 @@ from audioexplorer.visualize import make_scatterplot, specgram_base64
 
 
 app = dash.Dash(__name__, external_stylesheets=['https://codepen.io/chriddyp/pen/bWLwgP.css', "https://codepen.io/chriddyp/pen/brPBPO.css"])
-dash_large_upload.decorate_server(app.server, "uploads")
+dash_upload_components.decorate_server(app.server, "uploads")
 application = app.server
 
 with open('app_description.md', 'r') as file:
@@ -77,7 +77,7 @@ app.layout = html.Div(
             ]),
             html.Div(className="four columns", children=[
                 html.Div(id='upload-completed'),
-                dash_large_upload.Upload(
+                dash_upload_components.Upload(
                     id='upload-data',
                     maxFiles=1,
                     simultaneousUploads=1,

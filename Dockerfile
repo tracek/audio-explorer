@@ -16,7 +16,7 @@ RUN conda install -c conda-forge --quiet --yes \
     boto3=1.9.107 \
     umap-learn=0.3.7
 
-RUN pip install --no-cache-dir dash_audio_components dash_large_upload \
+RUN pip install --no-cache-dir dash_audio_components dash_upload_components \
     dash==0.41.0 \
     plotly==3.8.1 \
     sox==1.3.7
