@@ -7,16 +7,16 @@ RUN conda install -c conda-forge --quiet --yes \
     aubio=0.4.9 \
     yaafe=0.70 \
     librosa=0.6.3 \
-    pandas=0.24.1 \
-    numpy=1.16.1 \
+    pandas=0.24.2 \
+    numpy=1.16.3 \
     joblib=0.13.2 \
-    matplotlib=3.0.2 \
-    scikit-learn=0.20.2 \
+    matplotlib=3.0.3 \
+    scikit-learn=0.20.3 \
     scipy=1.2.1 \
-    boto3=1.9.107 \
-    umap-learn=0.3.7
+    boto3=1.9.134 \
+    umap-learn=0.3.8
 
-RUN pip install --no-cache-dir dash_audio_components dash_upload_components \
+RUN pip install --no-cache-dir dash_audio_components dash_upload_components==0.0.2 \
     dash==0.41.0 \
     plotly==3.8.1 \
     sox==1.3.7
