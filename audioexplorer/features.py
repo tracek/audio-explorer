@@ -80,12 +80,15 @@ def get(X, fs: int, n_jobs: int=1, selected_features='all', **params) -> pd.Data
     sample_len = float(params.get('sample_len'))
 
     X = frequency_filter(X, fs, lowcut=lowcut, highcut=highcut)
-    onset_detector = OnsetDetector(fs, nfft=block_size, hop=step_size,
-                                   onset_detector_type=onset_detector_type,
-                                   onset_threshold=onset_threshold, onset_silence_threshold=onset_silence_threshold,
-                                   min_duration_s=min_duration_s)
 
-    onsets = onset_detector.get_all(X)
+    if onset_threshold > 0:
+        onset_detector = OnsetDetector(fs, nfft=block_size, hop=step_size,
+                                       onset_detector_type=onset_detector_type,
+                                       onset_threshold=onset_threshold, onset_silence_threshold=onset_silence_threshold,
+                                       min_duration_s=min_duration_s)
+        onsets = onset_detector.get_all(X)
+    else:
+        onsets = np.arange(0, len(X) / fs, sample_len)
     chunks = _split_audio_into_chunks_by_onsets(X, fs, onsets, sample_len, n_jobs)
     if n_jobs == 1:
         features = _extract_features(chunks, fs, block_size=block_size, selected_features=selected_features)

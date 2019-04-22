@@ -1,4 +1,4 @@
-FROM continuumio/miniconda3:4.5.11
+FROM continuumio/miniconda3:4.5.12
 
 RUN apt-get update && apt-get install -y sox libsox-fmt-mp3
 
