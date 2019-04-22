@@ -7,7 +7,7 @@ import dash_core_components as dcc
 import dash_html_components as html
 from datetime import datetime
 from flask import request
-from dash.dependencies import Input, Output
+from dash.dependencies import Input, Output, State
 from dash.exceptions import PreventUpdate
 from botocore.client import Config
 
@@ -37,10 +37,10 @@ upload_style = {
 }
 
 
-def NamedSlider(name, id, min, max, value, step=None, marks=None, slider_type=dcc.Slider):
+def NamedSlider(id, min, max, value, step=None, marks=None, slider_type=dcc.Slider):
 
     return html.Div([
-        html.Div(id=f'name-{id}', children=name),
+        html.Div(id=f'name-{id}'),
         slider_type(
             id=id,
             min=min,
@@ -49,24 +49,6 @@ def NamedSlider(name, id, min, max, value, step=None, marks=None, slider_type=dc
             step=step,
             value=value),
     ], style={'margin': '25px 5px 30px 0px'},)
-
-
-def NamedSlider2(name, short, min, max, value, step=None, marks=None, slider_type=dcc.Slider):
-
-    return html.Div(
-        style={'margin': '25px 5px 30px 0px'},
-        children=[
-            f"{name}:",
-            html.Div(style={'margin-left': '5px'}, children=[
-                slider_type(
-                    id=f'slider-{short}',
-                    min=min,
-                    max=max,
-                    marks=marks,
-                    step=step,
-                    value=value)
-            ])
-        ])
 
 
 app.layout = html.Div(
@@ -121,14 +103,16 @@ app.layout = html.Div(
                         cancelButton=False,
                         defaultStyle=upload_style,
                         activeStyle=upload_style,
-                        completeStyle=upload_style
+                        completeStyle=upload_style,
+                        completedMessage=' Click again to upload.'
                     ),
                     html.Button('Apply', id='apply-button', style=upload_style),
                 ], style={'columnCount': 2}),
                 dcc.Dropdown(
-                    id='algorithm',
+                    id='algorithm-dropdown',
                     options=[{'label': label, 'value': value} for value, label in EMBEDDINGS.items()],
-                    placeholder='Select embedding'
+                    placeholder='Select embedding',
+                    value='umap'
                 ),
                 html.H4('Select features'),
                 dcc.Checklist(
@@ -138,7 +122,6 @@ app.layout = html.Div(
                 ),
                 html.H4('Algorithm parameters'),
                 NamedSlider(
-                    name='FFT window size',
                     id='fft-size',
                     min=2**7,
                     max=2**11,
@@ -146,7 +129,6 @@ app.layout = html.Div(
                     value=2**8
                 ),
                 NamedSlider(
-                    name='Bandpass filter [Hz]',
                     id='bandpass',
                     min=0,
                     max=8000,
@@ -154,7 +136,6 @@ app.layout = html.Div(
                     marks={
                         0: 'None',
                         500: '500 Hz',
-                        2000: '2000 Hz',
                         4000: '4000 Hz',
                         5000: '5000 Hz',
                         6000: '6000 Hz',
@@ -164,7 +145,6 @@ app.layout = html.Div(
                     slider_type=dcc.RangeSlider
                 ),
                 NamedSlider(
-                    name='Onset detection threshold',
                     id='onset-threshold',
                     min=0,
                     max=0.1,
@@ -178,17 +158,16 @@ app.layout = html.Div(
                     value=0.01
                 ),
                 NamedSlider(
-                    name='Sample length',
                     id='sample-len',
                     min=0.1,
-                    max=1,
+                    max=1.0,
                     step=0.01,
                     marks={
                         0.1: '0.1 s',
                         0.2: '0.2 s',
                         0.3: '0.3 s',
                         0.5: '0.5 s',
-                        1.0: '1.0 s'
+                        1.0: '1.0 s',
                     },
                     value=0.26
                 ),
@@ -226,6 +205,12 @@ def generate_signed_url(key: str):
     s3_client = boto3.client('s3', region_name='eu-central-1', config=Config(signature_version='s3v4'))
     url = s3_client.generate_presigned_url('get_object', Params={'Bucket': S3_BUCKET, 'Key': key}, ExpiresIn=3600)
     return url
+
+
+@app.callback(Output('name-fft-size', 'children'),
+              [Input('fft-size', 'value')])
+def display_value(value):
+    return f'FFT window size: {value}'
 
 
 @app.callback(Output('name-bandpass', 'children'),
@@ -275,15 +260,22 @@ def upload_to_s3(filename):
 
 @app.callback([Output('graph', 'figure'),
                Output('feature-store', 'data')],
-              [Input('filename-store', 'data')])
-def plot_embeddings(filename):
+              [Input('filename-store', 'data')],
+              [State('algorithm-dropdown', 'value'),
+               State('fft-size', 'value'),
+               State('bandpass', 'value'),
+               State('onset-threshold', 'value'),
+               State('sample-len', 'value')])
+def plot_embeddings(filename, embedding_type, fftsize, bandpass, onset_threshold, sample_len):
     if filename is not None:
         filepath = 'uploads/' + filename
+        lowpass, highpass = bandpass
+        min_duration = sample_len - 0.05
         fs, X = read_wave_local(filepath)
-        features = get(X, fs, n_jobs=1, lowcut=500, highcut=6000, block_size=512, onset_detector_type='hfc',
-                       onset_silence_threshold=-90, onset_threshold=0.01, min_duration_s=0.15, sample_len=0.26)
+        features = get(X, fs, n_jobs=1, lowcut=lowpass, highcut=highpass, block_size=fftsize, onset_detector_type='hfc',
+                       onset_silence_threshold=-90, onset_threshold=onset_threshold, min_duration_s=min_duration, sample_len=sample_len)
         features_for_emb = features.drop(columns=['onset', 'offset'])
-        embeddings = get_embeddings(features_for_emb, type='tsne', perplexity=60)
+        embeddings = get_embeddings(features_for_emb, type=embedding_type)
         # features.insert(0, column='filename', value=filenames[-1])
         extra_data = ['onset', 'offset']
         mean_freq = features['freq_mean'].astype(int).astype(str) + ' Hz'
