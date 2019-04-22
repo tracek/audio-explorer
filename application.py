@@ -104,7 +104,7 @@ app.layout = html.Div(
                         defaultStyle=upload_style,
                         activeStyle=upload_style,
                         completeStyle=upload_style,
-                        completedMessage=' Click again to upload.'
+                        completedMessage=' CLICK AGAIN TO UPLOAD'
                     ),
                     html.Button('Apply', id='apply-button', style=upload_style),
                 ], style={'columnCount': 2}),
@@ -116,8 +116,9 @@ app.layout = html.Div(
                 ),
                 html.H4('Select features'),
                 dcc.Checklist(
+                    id='features-selection',
                     options=[{'label': label, 'value': value} for value, label in FEATURES.items()],
-                    values=['freq'],
+                    values=list(FEATURES.keys()),
                     labelStyle={'display': 'inline-block', 'margin': '6px'}
                 ),
                 html.H4('Algorithm parameters'),
@@ -126,7 +127,7 @@ app.layout = html.Div(
                     min=2**7,
                     max=2**11,
                     marks={i: i for i in [2**i for i in range(7,12)]},
-                    value=2**8
+                    value=2**9
                 ),
                 NamedSlider(
                     id='bandpass',
@@ -260,20 +261,23 @@ def upload_to_s3(filename):
 
 @app.callback([Output('graph', 'figure'),
                Output('feature-store', 'data')],
-              [Input('filename-store', 'data')],
+              [Input('filename-store', 'data'),
+               Input('apply-button', 'n_clicks')],
               [State('algorithm-dropdown', 'value'),
                State('fft-size', 'value'),
                State('bandpass', 'value'),
                State('onset-threshold', 'value'),
-               State('sample-len', 'value')])
-def plot_embeddings(filename, embedding_type, fftsize, bandpass, onset_threshold, sample_len):
+               State('sample-len', 'value'),
+               State('features-selection', 'values')])
+def plot_embeddings(filename, n_clicks, embedding_type, fftsize, bandpass, onset_threshold, sample_len, selected_features):
     if filename is not None:
         filepath = 'uploads/' + filename
         lowpass, highpass = bandpass
         min_duration = sample_len - 0.05
         fs, X = read_wave_local(filepath)
-        features = get(X, fs, n_jobs=1, lowcut=lowpass, highcut=highpass, block_size=fftsize, onset_detector_type='hfc',
-                       onset_silence_threshold=-90, onset_threshold=onset_threshold, min_duration_s=min_duration, sample_len=sample_len)
+        features = get(X, fs, n_jobs=1, selected_features=selected_features, lowcut=lowpass, highcut=highpass, block_size=fftsize,
+                       onset_detector_type='hfc', onset_silence_threshold=-90, onset_threshold=onset_threshold, min_duration_s=min_duration,
+                       sample_len=sample_len)
         features_for_emb = features.drop(columns=['onset', 'offset'])
         embeddings = get_embeddings(features_for_emb, type=embedding_type)
         # features.insert(0, column='filename', value=filenames[-1])
