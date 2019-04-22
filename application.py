@@ -13,8 +13,8 @@ from botocore.client import Config
 
 from settings import S3_BUCKET
 from audioexplorer.audio_io import read_wave_local, read_wave_part_from_s3, convert_to_wav
-from audioexplorer.features import get
-from audioexplorer.embedding import get_embeddings
+from audioexplorer.features import get, FEATURES
+from audioexplorer.embedding import get_embeddings, EMBEDDINGS
 from audioexplorer.visualize import make_scatterplot, specgram_base64
 
 
@@ -26,15 +26,47 @@ with open('app_description.md', 'r') as file:
     description_md = file.read()
 
 upload_style = {
-    'width': '75%',
-    'height': '60px',
-    'lineHeight': '60px',
+    'width': '100%',
+    'height': '30px',
+    'lineHeight': '30px',
     'borderWidth': '1px',
-    'borderStyle': 'dashed',
+    'borderStyle': 'solid',
     'borderRadius': '5px',
     'textAlign': 'center',
-    'margin': '30px auto'
+    'margin': '15px auto'
 }
+
+
+def NamedSlider(name, id, min, max, value, step=None, marks=None, slider_type=dcc.Slider):
+
+    return html.Div([
+        html.Div(id=f'name-{id}', children=name),
+        slider_type(
+            id=id,
+            min=min,
+            max=max,
+            marks=marks,
+            step=step,
+            value=value),
+    ], style={'margin': '25px 5px 30px 0px'},)
+
+
+def NamedSlider2(name, short, min, max, value, step=None, marks=None, slider_type=dcc.Slider):
+
+    return html.Div(
+        style={'margin': '25px 5px 30px 0px'},
+        children=[
+            f"{name}:",
+            html.Div(style={'margin-left': '5px'}, children=[
+                slider_type(
+                    id=f'slider-{short}',
+                    min=min,
+                    max=max,
+                    marks=marks,
+                    step=step,
+                    value=value)
+            ])
+        ])
 
 
 app.layout = html.Div(
@@ -76,20 +108,89 @@ app.layout = html.Div(
                 )
             ]),
             html.Div(className="four columns", children=[
-                html.Div(id='upload-completed'),
-                dash_upload_components.Upload(
-                    id='upload-data',
-                    maxFiles=1,
-                    simultaneousUploads=1,
-                    maxFileSize=10 * 1024 * 1024 * 1000,  # 1000 MB
-                    service="/upload_resumable",
-                    textLabel="Drag and Drop Here to upload!",
-                    startButton=False,
-                    pauseButton=False,
-                    cancelButton=False,
-                    defaultStyle=upload_style,
-                    activeStyle=upload_style,
-                    completeStyle=upload_style
+                html.Div([
+                    dash_upload_components.Upload(
+                        id='upload-data',
+                        maxFiles=1,
+                        simultaneousUploads=1,
+                        maxFileSize=10 * 1024 * 1024 * 1000,  # 1000 MB
+                        service="/upload_resumable",
+                        textLabel="Drag and Drop Here to upload!",
+                        startButton=False,
+                        pauseButton=False,
+                        cancelButton=False,
+                        defaultStyle=upload_style,
+                        activeStyle=upload_style,
+                        completeStyle=upload_style
+                    ),
+                    html.Button('Apply', id='apply-button', style=upload_style),
+                ], style={'columnCount': 2}),
+                dcc.Dropdown(
+                    id='algorithm',
+                    options=[{'label': label, 'value': value} for value, label in EMBEDDINGS.items()],
+                    placeholder='Select embedding'
+                ),
+                html.H4('Select features'),
+                dcc.Checklist(
+                    options=[{'label': label, 'value': value} for value, label in FEATURES.items()],
+                    values=['freq'],
+                    labelStyle={'display': 'inline-block', 'margin': '6px'}
+                ),
+                html.H4('Algorithm parameters'),
+                NamedSlider(
+                    name='FFT window size',
+                    id='fft-size',
+                    min=2**7,
+                    max=2**11,
+                    marks={i: i for i in [2**i for i in range(7,12)]},
+                    value=2**8
+                ),
+                NamedSlider(
+                    name='Bandpass filter [Hz]',
+                    id='bandpass',
+                    min=0,
+                    max=8000,
+                    step=100,
+                    marks={
+                        0: 'None',
+                        500: '500 Hz',
+                        2000: '2000 Hz',
+                        4000: '4000 Hz',
+                        5000: '5000 Hz',
+                        6000: '6000 Hz',
+                        8000: 'None'
+                    },
+                    value=[500, 6000],
+                    slider_type=dcc.RangeSlider
+                ),
+                NamedSlider(
+                    name='Onset detection threshold',
+                    id='onset-threshold',
+                    min=0,
+                    max=0.1,
+                    step=0.005,
+                    marks={
+                        0: 'None',
+                        0.01: '0.01',
+                        0.05: '0.05',
+                        0.1: '0.1'
+                    },
+                    value=0.01
+                ),
+                NamedSlider(
+                    name='Sample length',
+                    id='sample-len',
+                    min=0.1,
+                    max=1,
+                    step=0.01,
+                    marks={
+                        0.1: '0.1 s',
+                        0.2: '0.2 s',
+                        0.3: '0.3 s',
+                        0.5: '0.5 s',
+                        1.0: '1.0 s'
+                    },
+                    value=0.26
                 ),
                 html.Div(id='div-spectrogram', style={'margin-top': '20px'})
             ]),
@@ -127,6 +228,24 @@ def generate_signed_url(key: str):
     return url
 
 
+@app.callback(Output('name-bandpass', 'children'),
+              [Input('bandpass', 'value')])
+def display_value(value):
+    return f'Bandpass filter: {value[0]} - {value[1]} Hz'
+
+
+@app.callback(Output('name-onset-threshold', 'children'),
+              [Input('onset-threshold', 'value')])
+def display_value(value):
+    return f'Onset detection threshold: {value}'
+
+
+@app.callback(Output('name-sample-len', 'children'),
+              [Input('sample-len', 'value')])
+def display_value(value):
+    return f'Sample length: {value} s'
+
+
 @app.callback(Output('filename-store', 'data'),
               [Input('upload-data', 'fileNames')])
 def convert_upload_to_wave(filenames):
@@ -161,7 +280,7 @@ def plot_embeddings(filename):
     if filename is not None:
         filepath = 'uploads/' + filename
         fs, X = read_wave_local(filepath)
-        features = get(X, fs, n_jobs=1, lowcut=500, highcut=6000, block_size=1024, onset_detector_type='hfc',
+        features = get(X, fs, n_jobs=1, lowcut=500, highcut=6000, block_size=512, onset_detector_type='hfc',
                        onset_silence_threshold=-90, onset_threshold=0.01, min_duration_s=0.15, sample_len=0.26)
         features_for_emb = features.drop(columns=['onset', 'offset'])
         embeddings = get_embeddings(features_for_emb, type='tsne', perplexity=60)

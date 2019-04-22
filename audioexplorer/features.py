@@ -7,6 +7,21 @@ from audioexplorer.filters import frequency_filter
 from audioexplorer.yaafe_wrapper import YaafeWrapper
 
 
+FEATURES = {'freq': 'Frequency statistics',
+            'pitch': 'Pitch statistics',
+            'chroma': 'Chroma',
+            'LPC': 'LPC',
+            'LSF': 'LSF',
+            'MFCC': 'MFCC',
+            'OBSI': 'OBSI',
+            'SpectralCrestFactorPerBand': 'Spectral crest factors',
+            'SpectralFlatness': 'Spectral flatness',
+            'SpectralFlux': 'Spectral flux',
+            'SpectralRolloff': 'Spectral rolloff',
+            'SpectralVariation': 'Spectral variation',
+            'ZCR': 'ZCR'}
+
+
 class FeatureExtractor(object):
 
     def __init__(self, fs: int, block_size: int=1024, step_size: int=None):
