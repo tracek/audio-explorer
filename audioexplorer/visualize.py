@@ -72,8 +72,9 @@ def specgram_base64(signal: np.ndarray, fs, start, end) -> str:
     ax.axvline(x=start + 0.2, color='red', alpha=0.3)
     ax.axvline(x=end - 0.2, color='red', alpha=0.3)
 
-    stream = BytesIO()
-    plt.savefig(stream, format='png')
-    stream.seek(0)
-    base64_jpg = base64.b64encode(stream.read()).decode("utf-8")
+    with BytesIO() as stream:
+        plt.savefig(stream, format='png')
+        stream.seek(0)
+        base64_jpg = base64.b64encode(stream.read()).decode("utf-8")
+    plt.close(f)
     return base64_jpg
