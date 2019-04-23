@@ -8,12 +8,15 @@ from typing import Union
 from joblib import Parallel, delayed
 from sklearn.model_selection import ParameterGrid
 from sklearn.preprocessing import StandardScaler
-from sklearn.manifold import TSNE
+from sklearn.manifold import TSNE, Isomap, SpectralEmbedding, LocallyLinearEmbedding
 from sklearn.decomposition import PCA, FactorAnalysis, KernelPCA, FastICA
 
 
 EMBEDDINGS = {'umap': 'Uniform Manifold Approximation and Projection',
               'tsne': 't-Distributed Stochastic Neighbor Embedding',
+              'isomap': 'Isometric Mapping',
+              'spectral': 'Spectral embedding',
+              'loclin': 'Locally Linear Embedding',
               'pca': 'Principal Component Analysis',
               'kpca': 'Kernel Principal Component Analysis',
               'fa': 'Factor Analysis',
@@ -77,6 +80,9 @@ def get_embeddings(data: Union[np.ndarray, pd.DataFrame] , type: str='umap', **k
      'kpca': 'Kernel Principal Component Analysis',
      'fa': 'Factor Analysis',
      'ica': 'Independent Component Analysis'
+     'isomap': 'Isomap'
+     'spectral': 'Spectral embedding',
+     'loclin': 'Locally Linear Embedding',
     :param data: numpy 2d array compatible
     :param type: One of the following: 'umap', 'tsne', 'pca', 'kpca', 'fa', 'ica'
     :param kwargs: params to pass to the embedding algorithm
@@ -85,10 +91,7 @@ def get_embeddings(data: Union[np.ndarray, pd.DataFrame] , type: str='umap', **k
     data = StandardScaler().fit_transform(data)
     type = type.lower()
     random_state = 42
-    if type == 'tsne':
-        kwargs['perplexity'] = kwargs.get('perplexity', 50)
-        algo = TSNE(n_components=2, init='pca', random_state=random_state, **kwargs)
-    elif type == 'umap':
+    if type == 'umap':
         # somehow pydev debugger gets very slow upon loading of UMAP
         # moving umap here for the time being
         import umap
@@ -96,6 +99,15 @@ def get_embeddings(data: Union[np.ndarray, pd.DataFrame] , type: str='umap', **k
         kwargs['min_dist'] = kwargs.get('min_dist', 0.1)
         kwargs['metric'] = kwargs.get('metric', 'euclidean')
         algo = umap.UMAP(n_components=2, transform_seed=random_state, **kwargs)
+    elif type == 'tsne':
+        kwargs['perplexity'] = kwargs.get('perplexity', 50)
+        algo = TSNE(n_components=2, init='pca', random_state=random_state, **kwargs)
+    elif type == 'isomap':
+        algo = Isomap()
+    elif type == 'spectral':
+        algo = SpectralEmbedding(random_state=random_state)
+    elif type == 'loclin':
+        algo = LocallyLinearEmbedding(random_state=random_state)
     elif type == 'pca':
         algo = PCA(n_components=2, random_state=random_state, **kwargs)
     elif type == 'fa':

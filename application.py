@@ -1,3 +1,4 @@
+import html
 import os
 import boto3
 import dash
@@ -50,8 +51,7 @@ def NamedSlider(id, min, max, value, step=None, marks=None, slider_type=dcc.Slid
             value=value),
     ], style={'margin': '25px 5px 30px 0px'},)
 
-
-app.layout = html.Div(
+main_app = html.Div(
     className="container",
     style={
         'width': '90%',
@@ -97,7 +97,7 @@ app.layout = html.Div(
                         simultaneousUploads=1,
                         maxFileSize=10 * 1024 * 1024 * 1000,  # 1000 MB
                         service="/upload_resumable",
-                        textLabel="Drag and Drop Here to upload!",
+                        textLabel="UPLOAD AUDIO",
                         startButton=False,
                         pauseButton=False,
                         cancelButton=False,
@@ -175,19 +175,25 @@ app.layout = html.Div(
                 html.Div(id='div-spectrogram', style={'margin-top': '20px'})
             ]),
         ]),
+    ]
+)
 
-        html.Div(
-            className='row',
-            children=html.Div(
+app.layout = html.Div([
+    dcc.Tabs(id='tabs', children=[
+        dcc.Tab(label='Explore', children=[
+            main_app
+        ]),
+        dcc.Tab(label='Help', children=[
+            html.Div(
                 style={
                     'width': '75%',
                     'margin': '30px auto',
                 },
                 children=dcc.Markdown(description_md)
             )
-        )
-    ]
-)
+        ])
+    ])
+])
 
 
 def copy_file_to_bucket(filepath_input, key):
