@@ -19,12 +19,11 @@ Given audio fragment, we compute the following features:
 * Mel-Frequency Cepstral Coefficients ([MFCC](https://en.wikipedia.org/wiki/Mel-frequency_cepstrum))
 * Octave Band Signal Intensity (OBSI)
 * [Spectral crest factor per band](https://en.wikipedia.org/wiki/Crest_factor)
-* Spectral decrease: average spectral slope
-* Spectral flatness: spectral flatness using the ratio between geometric and arithmetic mean
-* Spectral flux: flux of spectrum between consecutives frames
-* Spectral rolloff: frequency so that 99% of the energy is contained below
-* Spectral variation: normalized correlation of spectrum between consecutive frames
-* Zero-Crossing Rate (ZCR) in frames
+* Decrease: average spectral slope
+* Flatness: spectral flatness using the ratio between geometric and arithmetic mean
+* Flux: flux of spectrum between consecutives frames
+* Rolloff: frequency so that 99% of the energy is contained below
+* Variation: normalized correlation of spectrum between consecutive frames
 
 **Don't know what to choose**? Accept the default. 
 

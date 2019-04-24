@@ -9,12 +9,11 @@ YAAFE_FEATURES = \
      'LSF': 'LSF',
      'MFCC': 'MFCC',
      'OBSI': 'OBSI',
-     'SpectralCrestFactorPerBand': 'Spectral crest factors',
-     'SpectralFlatness': 'Spectral flatness',
-     'SpectralFlux': 'Spectral flux',
-     'SpectralRolloff': 'Spectral rolloff',
-     'SpectralVariation': 'Spectral variation',
-     'ZCR': 'ZCR'}
+     'SpectralCrestFactorPerBand': 'Crest factors',
+     'SpectralFlatness': 'Flatness',
+     'SpectralFlux': 'Flux',
+     'SpectralRolloff': 'Rolloff',
+     'SpectralVariation': 'Variation'}
 
 class YaafeWrapper(object):
 
