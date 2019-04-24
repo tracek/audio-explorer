@@ -1,4 +1,3 @@
-import html
 import os
 import boto3
 import dash
@@ -39,7 +38,6 @@ upload_style = {
 
 
 def NamedSlider(id, min, max, value, step=None, marks=None, slider_type=dcc.Slider):
-
     return html.Div([
         html.Div(id=f'name-{id}'),
         slider_type(
@@ -63,16 +61,6 @@ main_app = html.Div(
         dcc.Store(id='signed-url-store', storage_type='memory'),
         dcc.Store(id='feature-store', storage_type='memory'),
         dcc.Store(id='filename-store', storage_type='memory'),
-        html.Div(className="row", children=[
-            html.H2(
-                'Audio Explorer pre-alpha',
-                id='title',
-                style={
-                    'width': '75%',
-                    'margin': '30px auto',
-                }
-            ),
-        ]),
 
         # Body
         html.Div(className="row", children=[
