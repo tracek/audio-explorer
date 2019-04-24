@@ -67,7 +67,7 @@ main_app = html.Div(
             html.Div(className="eight columns", children=[
                 dcc.Graph(
                     id='graph',
-                    style={'height': '80vh'}
+                    style={'height': '90vh'}
                 ),
                 dash_audio_components.DashAudioComponents(
                     id='audio-player',
@@ -92,7 +92,7 @@ main_app = html.Div(
                         defaultStyle=upload_style,
                         activeStyle=upload_style,
                         completeStyle=upload_style,
-                        completedMessage=' CLICK AGAIN TO UPLOAD'
+                        completedMessage='UPLOAD AUDIO'
                     ),
                     html.Button('Apply', id='apply-button', style=upload_style),
                 ], style={'columnCount': 2}),

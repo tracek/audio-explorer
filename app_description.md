@@ -55,8 +55,8 @@ A spectrogram is a visual representation of the spectrum of frequencies of a sig
  
 
 ### How to use the app
-1. Select algorithm parameters. Consider if the program should detect onsets of audio or chop complete audio into chunks.
-2. Upload the audio. Once completed, algorithm will 
+1. Select algorithm parameters. Consider if the program should detect onsets of audio or consider all chunks.
+2. Upload the audio. Once completed, selected algorithm will find a projection to 2d space.
 3. Inspect the clusters. Play audio for various samples to see how they are grouped together.
 4. ... TODO
 
