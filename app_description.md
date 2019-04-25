@@ -59,7 +59,3 @@ A spectrogram is a visual representation of the spectrum of frequencies of a sig
 2. Upload the audio. Once completed, selected algorithm will find a projection to 2d space.
 3. Inspect the clusters. Play audio for various samples to see how they are grouped together.
 4. ... TODO
-
-### Acknowledgements
-
-Many thanks to the Amazon and its "AWS Cloud Credits for Research" grant that allowed me to develop this software. 
