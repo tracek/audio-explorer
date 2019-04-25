@@ -106,7 +106,7 @@ main_app = html.Div(
                 dcc.Checklist(
                     id='features-selection',
                     options=[{'label': label, 'value': value} for value, label in FEATURES.items()],
-                    values=list(FEATURES.keys()),
+                    values=['freq'],
                     labelStyle={'display': 'inline-block', 'margin': '6px'}
                 ),
                 html.H4('Algorithm parameters'),

@@ -87,7 +87,7 @@ def get_embeddings(data: Union[np.ndarray, pd.DataFrame] , type: str='umap', n_j
         # somehow pydev debugger gets very slow upon loading of UMAP
         # moving umap here for the time being
         import umap
-        algo = umap.UMAP(n_components=2, transform_seed=random_state, **kwargs)
+        algo = umap.UMAP(n_components=2, transform_seed=random_state, n_neighbors=40, **kwargs)
     elif type == 'tsne':
         kwargs['perplexity'] = kwargs.get('perplexity', 50)
         algo = TSNE(n_components=2, init='pca', random_state=random_state, **kwargs)
