@@ -174,6 +174,19 @@ main_app = html.Div(
                     },
                     value=0.26
                 ),
+                NamedSlider(
+                    id='clustering-strength',
+                    min=5,
+                    max=100,
+                    step=5,
+                    marks={
+                        5: 'Low',
+                        15: 'Normal',
+                        50: 'Strong',
+                        100: 'Beyond reason'
+                    },
+                    value=40
+                ),
                 html.Div(id='div-spectrogram', style={'margin-top': '20px'})
             ]),
         ]),
@@ -216,6 +229,13 @@ def generate_signed_url(key: str):
     return url
 
 
+def clustering_strength_translator(type, value):
+    if type in ['umap', 'isomap']:
+        return {'n_neighbors': value}
+    else:
+        return None
+
+
 @app.callback(Output('name-fft-size', 'children'),
               [Input('fft-size', 'value')])
 def display_value(value):
@@ -238,6 +258,12 @@ def display_value(value):
               [Input('sample-len', 'value')])
 def display_value(value):
     return f'Sample length: {value} s'
+
+
+@app.callback(Output('name-clustering-strength', 'children'),
+              [Input('clustering-strength', 'value')])
+def display_value(value):
+    return f'Clustering strength: {value}'
 
 
 @app.callback(Output('filename-store', 'data'),
@@ -276,8 +302,10 @@ def upload_to_s3(filename):
                State('bandpass', 'value'),
                State('onset-threshold', 'value'),
                State('sample-len', 'value'),
+               State('clustering-strength', 'value'),
                State('features-selection', 'values')])
-def plot_embeddings(filename, n_clicks, embedding_type, fftsize, bandpass, onset_threshold, sample_len, selected_features):
+def plot_embeddings(filename, n_clicks, embedding_type, fftsize, bandpass, onset_threshold, sample_len,
+                    clustering_str, selected_features):
     if filename is not None:
         filepath = 'uploads/' + filename
         lowpass, highpass = bandpass
@@ -287,7 +315,10 @@ def plot_embeddings(filename, n_clicks, embedding_type, fftsize, bandpass, onset
                        onset_detector_type='hfc', onset_silence_threshold=-90, onset_threshold=onset_threshold, min_duration_s=min_duration,
                        sample_len=sample_len)
         features_for_emb = features.drop(columns=['onset', 'offset'])
-        embeddings = get_embeddings(features_for_emb, type=embedding_type)
+
+        params = clustering_strength_translator(embedding_type, clustering_str)
+
+        embeddings = get_embeddings(features_for_emb, type=embedding_type, n_jobs=1, **params)
         # features.insert(0, column='filename', value=filenames[-1])
         extra_data = ['onset', 'offset']
         if 'freq_mean' in features:
