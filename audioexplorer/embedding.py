@@ -5,7 +5,7 @@ import numpy as np
 import pandas as pd
 import joblib
 from typing import Union
-from joblib import Parallel, delayed
+from joblib import Parallel, delayed, cpu_count
 from sklearn.model_selection import ParameterGrid
 from sklearn.preprocessing import StandardScaler
 from sklearn.manifold import TSNE, Isomap, SpectralEmbedding, LocallyLinearEmbedding
@@ -23,43 +23,35 @@ EMBEDDINGS = {'umap': 'Uniform Manifold Approximation and Projection',
               'ica': 'Independent Component Analysis'}
 
 
-def fit_and_dump(data: np.ndarray, embedding_type: str, output_path: str, n_jobs: int=-1, grid_path: str=None):
-    embedding_type = embedding_type.lower()
+def fit_and_save_with_grid(data: Union[np.ndarray, pd.DataFrame], grid_path: str, type: str='umap', output_dir: str='.', n_jobs: int=-1):
+    type = type.lower()
     scaler = StandardScaler()
     data = scaler.fit_transform(data)
-    os.makedirs(output_path, exist_ok=True)
-    joblib.dump(scaler, filename=os.path.join(output_path, 'scaler.joblib'))
+    os.makedirs(output_dir, exist_ok=True)
+    joblib.dump(scaler, filename=os.path.join(output_dir, 'scaler.joblib'))
 
     if grid_path:
         with open(grid_path) as config_file:
             grid_dict = json.load(config_file)
         param_grid = ParameterGrid(grid_dict)
-        if n_jobs == -1:
+        if (n_jobs == -1) and (len(param_grid) > cpu_count()):
             n_jobs = len(param_grid)
-        Parallel(n_jobs=n_jobs, backend='loky')(delayed(fit_and_save)(
-            data=data, output_dir=output_path, embedding_type=embedding_type, params=params) for params in param_grid)
-    else:
-        fit_and_save(data=data, output_dir=output_path, embedding_type=embedding_type, params={})
-
-
-def fit_and_save(embedding_type, output_dir, data, params):
-    params_string = '-'.join(['{}_{}'.format(k, v) for k, v in params.items()])
-    logging.info(f'Running {embedding_type} with {params_string}')
-    try:
-        if embedding_type == 'tsne':
-            algo = TSNE(**params)
-        elif embedding_type == 'umap':
-            import umap
-            algo = umap.UMAP(**params)
+        if n_jobs == 1:
+            for params in param_grid:
+                fit_and_save(data=data, output_dir=output_dir, n_jobs=1, **params)
         else:
-            raise NotImplemented(f'Requested embedding type {embedding_type} is not implemented')
+            Parallel(n_jobs=n_jobs, backend='loky')(delayed(fit_and_save)(
+                data=data, output_dir=output_dir, type=type, n_jobs=1, kwargs=params) for params in param_grid)
+    else:
+        fit_and_save(data=data, output_dir=output_dir, n_jobs=n_jobs)
 
-        fit = algo.fit(data)
-        output_path = os.path.join(output_dir, embedding_type + '_' + params_string + '.joblib')
-        joblib.dump(fit, filename=output_path)
-    except Exception as ex:
-        logging.exception(ex)
-        raise
+
+def fit_and_save(data: Union[np.ndarray, pd.DataFrame], output_dir: str, type: str='umap', n_jobs=1, **kwargs):
+    params_string = '-'.join(['{}_{}'.format(k, v) for k, v in kwargs.items()])
+    logging.info(f'Running {type} with {params_string}')
+    embedding = get_embeddings(data=data, type=type, n_jobs=n_jobs, **kwargs)
+    output_path = os.path.join(output_dir, type + '_' + params_string + '.joblib')
+    joblib.dump(embedding, filename=output_path)
 
 
 def load_and_transform(data: np.ndarray, name: str) -> np.ndarray:
@@ -71,7 +63,7 @@ def load_and_transform(data: np.ndarray, name: str) -> np.ndarray:
     return embedding
 
 
-def get_embeddings(data: Union[np.ndarray, pd.DataFrame] , type: str='umap', **kwargs) -> np.ndarray:
+def get_embeddings(data: Union[np.ndarray, pd.DataFrame] , type: str='umap', n_jobs: int=1, **kwargs) -> np.ndarray:
     """
     Following embedding types are available
      'umap': 'Uniform Manifold Approximation and Projection',
@@ -95,26 +87,23 @@ def get_embeddings(data: Union[np.ndarray, pd.DataFrame] , type: str='umap', **k
         # somehow pydev debugger gets very slow upon loading of UMAP
         # moving umap here for the time being
         import umap
-        kwargs['n_neighbors'] = kwargs.get('n_neighbors', 10)
-        kwargs['min_dist'] = kwargs.get('min_dist', 0.1)
-        kwargs['metric'] = kwargs.get('metric', 'euclidean')
         algo = umap.UMAP(n_components=2, transform_seed=random_state, **kwargs)
     elif type == 'tsne':
         kwargs['perplexity'] = kwargs.get('perplexity', 50)
         algo = TSNE(n_components=2, init='pca', random_state=random_state, **kwargs)
     elif type == 'isomap':
-        algo = Isomap()
+        algo = Isomap(n_components=2, n_jobs=n_jobs, **kwargs)
     elif type == 'spectral':
-        algo = SpectralEmbedding(random_state=random_state)
+        algo = SpectralEmbedding(n_components=2, n_jobs=n_jobs, random_state=random_state, **kwargs)
     elif type == 'loclin':
-        algo = LocallyLinearEmbedding(random_state=random_state)
+        algo = LocallyLinearEmbedding(n_components=2, n_jobs=n_jobs, random_state=random_state)
     elif type == 'pca':
         algo = PCA(n_components=2, random_state=random_state, **kwargs)
     elif type == 'fa':
         algo = FactorAnalysis(n_components=2, svd_method='lapack', random_state=random_state, **kwargs)
     elif type == 'kpca':
         kwargs['kernel'] = kwargs.get('kernel', 'cosine')
-        algo = KernelPCA(n_components=2, random_state=random_state, **kwargs)
+        algo = KernelPCA(n_components=2, n_jobs=n_jobs, random_state=random_state, **kwargs)
     elif type == 'ica':
         algo = FastICA(n_components=2, random_state=random_state)
     else:
