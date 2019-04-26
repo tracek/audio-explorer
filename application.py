@@ -38,6 +38,8 @@ application = app.server
 
 with open('docs/app_description.md', 'r') as file:
     description_md = file.read()
+with open('docs/app_about.md', 'r') as file:
+    about_md = file.read()
 
 upload_style = {
     'width': '100%',
@@ -214,7 +216,16 @@ app.layout = html.Div([
                 },
                 children=dcc.Markdown(description_md)
             )
-        ])
+        ]),
+        dcc.Tab(label='About', children=[
+            html.Div(
+                style={
+                    'width': '75%',
+                    'margin': '30px auto',
+                },
+                children=dcc.Markdown(description_md)
+            )
+        ]),
     ])
 ])
 
