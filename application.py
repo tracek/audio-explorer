@@ -28,7 +28,7 @@ from botocore.client import Config
 from settings import S3_BUCKET
 from audioexplorer.audio_io import read_wave_local, read_wave_part_from_s3, convert_to_wav
 from audioexplorer.features import get, FEATURES
-from audioexplorer.embedding import get_embeddings, EMBEDDINGS
+from audioexplorer.embedding import get_embeddings, EMBEDDINGS, EmbeddingException
 from audioexplorer.visualize import make_scatterplot, specgram_base64
 
 
@@ -53,17 +53,19 @@ upload_style = {
 
 def NamedSlider(id, min, max, value, step=None, marks=None, slider_type=dcc.Slider, hidden=False):
     div = html.Div([
-        html.Div(id=f'name-{id}'),
-        slider_type(
-            id=id,
-            min=min,
-            max=max,
-            marks=marks,
-            step=step,
-            value=value)
+        html.Div(id=f'name-{id}', hidden=hidden),
+            slider_type(
+                id=id,
+                min=min,
+                max=max,
+                marks=marks,
+                step=step,
+                value=value,
+            )
         ],
         style={'margin': '25px 5px 30px 0px'},
-        hidden=hidden
+        hidden=hidden,
+        id=f'slidercontainer-{id}'
     )
 
     return div
@@ -84,6 +86,7 @@ main_app = html.Div(
         # Body
         html.Div(className="row", children=[
             html.Div(className="eight columns", children=[
+                html.Div(id='error-report', style={'color': 'red'}),
                 dcc.Graph(
                     id='graph',
                     style={'height': '90vh'}
@@ -270,6 +273,14 @@ def display_value(value):
 def display_value(value):
     return f'Clustering strength: {value}'
 
+@app.callback(Output('slidercontainer-clustering-strength', 'style'),
+              [Input('algorithm-dropdown', 'value')])
+def show_extra_options(value):
+    if value in ['umap', 'isomap']:
+        return {'display': 'block'}
+    else:
+        return {'display': 'none'}
+
 
 @app.callback(Output('filename-store', 'data'),
               [Input('upload-data', 'fileNames')])
@@ -299,7 +310,8 @@ def upload_to_s3(filename):
 
 
 @app.callback([Output('graph', 'figure'),
-               Output('feature-store', 'data')],
+               Output('feature-store', 'data'),
+               Output('error-report', 'children')],
               [Input('filename-store', 'data'),
                Input('apply-button', 'n_clicks')],
               [State('algorithm-dropdown', 'value'),
@@ -323,20 +335,24 @@ def plot_embeddings(filename, n_clicks, embedding_type, fftsize, bandpass, onset
 
         params = clustering_strength_translator(embedding_type, clustering_str)
 
-        embeddings = get_embeddings(features_for_emb, type=embedding_type, n_jobs=1, **params)
-        # features.insert(0, column='filename', value=filenames[-1])
-        extra_data = ['onset', 'offset']
-        if 'freq_mean' in features:
-            mean_freq = features['freq_mean'].astype(int).astype(str) + ' Hz'
-        elif 'pitch_median' in features:
-            mean_freq = features['pitch_median'].astype(int).astype(str) + ' Hz'
-        else:
-            mean_freq = None
-        figure = make_scatterplot(x=embeddings[:, 0], y=embeddings[:, 1],
-                                  customdata=features[extra_data],
-                                  text=mean_freq)
+        try:
+            embeddings = get_embeddings(features_for_emb, type=embedding_type, n_jobs=1, **params)
 
-        return figure, features.to_dict(orient='rows')
+            # features.insert(0, column='filename', value=filenames[-1])
+            extra_data = ['onset', 'offset']
+            if 'freq_mean' in features:
+                mean_freq = features['freq_mean'].astype(int).astype(str) + ' Hz'
+            elif 'pitch_median' in features:
+                mean_freq = features['pitch_median'].astype(int).astype(str) + ' Hz'
+            else:
+                mean_freq = None
+            figure = make_scatterplot(x=embeddings[:, 0], y=embeddings[:, 1],
+                                      customdata=features[extra_data],
+                                      text=mean_freq)
+
+            return figure, features.to_dict(orient='rows'), None
+        except Exception as ex:
+            return dcc.Graph(), None, str(ex)
     else:
         raise PreventUpdate()
 

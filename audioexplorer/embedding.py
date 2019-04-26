@@ -26,7 +26,7 @@ from sklearn.manifold import TSNE, Isomap, SpectralEmbedding, LocallyLinearEmbed
 from sklearn.decomposition import PCA, FactorAnalysis, KernelPCA, FastICA
 
 
-class EmbeddingFailed(Exception):
+class EmbeddingException(Exception):
     pass
 
 
@@ -99,8 +99,8 @@ def get_embeddings(data: Union[np.ndarray, pd.DataFrame] , type: str='umap', n_j
     :return:
     """
     if data.shape[0] < 10:
-        raise EmbeddingFailed(f'The input data consisted of {data.shape[0]} points, which is too few for meaningful '
-                              f'embedding.')
+        raise EmbeddingException(f'The input data consisted of {data.shape[0]} points, which is too few for meaningful '
+                              f'embedding. Consider reducing onset detection threshold.')
     data = StandardScaler().fit_transform(data)
     type = type.lower()
     random_state = 42
@@ -108,11 +108,10 @@ def get_embeddings(data: Union[np.ndarray, pd.DataFrame] , type: str='umap', n_j
         # somehow pydev debugger gets very slow upon loading of UMAP
         # moving umap here for the time being
         import umap
-        n_neighbors = 50
+        n_neighbors = kwargs.get('n_neighbors')
         if data.shape[0] < n_neighbors:
-            raise EmbeddingFailed(f'The input data consisted of {data.shape[0]} points. Reduce clustering strength to '
-                                  f'at most {data.shape[0] - 1}')
-        algo = umap.UMAP(n_components=2, transform_seed=random_state, n_neighbors=n_neighbors, **kwargs)
+            raise EmbeddingException(f'The input data consisted of {data.shape[0]} points. Reduce clustering strength to '
+                                  f'at most {data.shape[0] - 1} .')
         algo = umap.UMAP(n_components=2, transform_seed=random_state, **kwargs)
     elif type == 'tsne':
         kwargs['perplexity'] = kwargs.get('perplexity', 50)
