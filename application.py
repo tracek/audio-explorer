@@ -15,6 +15,7 @@
 import os
 import boto3
 import dash
+import dash_table
 import dash_audio_components
 import dash_upload_components
 import dash_core_components as dcc
@@ -38,8 +39,6 @@ application = app.server
 
 with open('docs/app_description.md', 'r') as file:
     description_md = file.read()
-with open('docs/app_about.md', 'r') as file:
-    about_md = file.read()
 
 upload_style = {
     'width': '100%',
@@ -75,7 +74,7 @@ def NamedSlider(id, min, max, value, step=None, marks=None, slider_type=dcc.Slid
 main_app = html.Div(
     className="container",
     style={
-        'width': '90%',
+        'width': '95%',
         'max-width': 'none',
         'font-size': '1.5rem',
         'padding': '10px 30px'
@@ -203,18 +202,27 @@ main_app = html.Div(
     ]
 )
 
+table = html.Div(
+    className="container",
+    style={
+        'width': '95%',
+        'max-width': 'none',
+        'font-size': '1.5rem',
+        'padding': '10px 30px'
+    },
+    children=[
+        html.Div(id='features-container')
+    ]
+)
+
 app.layout = html.Div([
     dcc.Tabs(id='tabs', children=[
         dcc.Tab(label='Explore', children=[
             main_app
         ]),
-        dcc.Tab(label='Help', children=[
+        dcc.Tab(label='Table', children=[
             html.Div(
-                style={
-                    'width': '75%',
-                    'margin': '30px auto',
-                },
-                children=dcc.Markdown(description_md)
+                children=table
             )
         ]),
         dcc.Tab(label='About', children=[
@@ -223,7 +231,7 @@ app.layout = html.Div([
                     'width': '75%',
                     'margin': '30px auto',
                 },
-                children=dcc.Markdown(about_md)
+                children=dcc.Markdown(description_md)
             )
         ]),
     ])
@@ -254,6 +262,22 @@ def clustering_strength_translator(type, value):
     elif type == 'tsne':
         return {'perplexity': value}
     return None
+
+
+@app.callback(Output('features-container', 'children'),
+              [Input('feature-store', 'data')])
+def show_features_in_table(data):
+    if data is None:
+        raise PreventUpdate
+
+    feature_table = dash_table.DataTable(
+        id='features-table',
+        columns=[{'name': i, 'id': i} for i in data[0].keys()],
+        data=data,
+        pagination_mode='fe',
+        pagination_settings={'page_size': 20, 'current_page': 0}
+    )
+    return feature_table
 
 
 @app.callback(Output('name-fft-size', 'children'),
@@ -306,7 +330,7 @@ def convert_upload_to_wave(filenames):
         convert_to_wav(filepath, 'uploads/' + key)
         return key
     else:
-        raise PreventUpdate()
+        raise PreventUpdate
 
 
 @app.callback(Output('signed-url-store', 'data'),
@@ -362,7 +386,7 @@ def plot_embeddings(filename, n_clicks, embedding_type, fftsize, bandpass, onset
                                       customdata=features[extra_data],
                                       text=mean_freq)
 
-            return figure, features.to_dict(orient='rows'), warning_msg
+            return figure, features.round(2).to_dict(orient='rows'), warning_msg
         except Exception as ex:
             return dcc.Graph(), None, str(ex)
     else:
