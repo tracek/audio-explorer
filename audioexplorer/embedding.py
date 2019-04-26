@@ -26,6 +26,10 @@ from sklearn.manifold import TSNE, Isomap, SpectralEmbedding, LocallyLinearEmbed
 from sklearn.decomposition import PCA, FactorAnalysis, KernelPCA, FastICA
 
 
+class EmbeddingFailed(Exception):
+    pass
+
+
 EMBEDDINGS = {'umap': 'Uniform Manifold Approximation and Projection',
               'tsne': 't-Distributed Stochastic Neighbor Embedding',
               'isomap': 'Isometric Mapping',
@@ -94,6 +98,9 @@ def get_embeddings(data: Union[np.ndarray, pd.DataFrame] , type: str='umap', n_j
     :param kwargs: params to pass to the embedding algorithm
     :return:
     """
+    if data.shape[0] < 10:
+        raise EmbeddingFailed(f'The input data consisted of {data.shape[0]} points, which is too few for meaningful '
+                              f'embedding.')
     data = StandardScaler().fit_transform(data)
     type = type.lower()
     random_state = 42
@@ -101,7 +108,11 @@ def get_embeddings(data: Union[np.ndarray, pd.DataFrame] , type: str='umap', n_j
         # somehow pydev debugger gets very slow upon loading of UMAP
         # moving umap here for the time being
         import umap
-        algo = umap.UMAP(n_components=2, transform_seed=random_state, n_neighbors=40, **kwargs)
+        n_neighbors = 50
+        if data.shape[0] < n_neighbors:
+            raise EmbeddingFailed(f'The input data consisted of {data.shape[0]} points. Reduce clustering strength to '
+                                  f'at most {data.shape[0] - 1}')
+        algo = umap.UMAP(n_components=2, transform_seed=random_state, n_neighbors=n_neighbors, **kwargs)
     elif type == 'tsne':
         kwargs['perplexity'] = kwargs.get('perplexity', 50)
         algo = TSNE(n_components=2, init='pca', random_state=random_state, **kwargs)

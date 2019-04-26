@@ -51,8 +51,8 @@ upload_style = {
 }
 
 
-def NamedSlider(id, min, max, value, step=None, marks=None, slider_type=dcc.Slider):
-    return html.Div([
+def NamedSlider(id, min, max, value, step=None, marks=None, slider_type=dcc.Slider, hidden=False):
+    div = html.Div([
         html.Div(id=f'name-{id}'),
         slider_type(
             id=id,
@@ -60,8 +60,13 @@ def NamedSlider(id, min, max, value, step=None, marks=None, slider_type=dcc.Slid
             max=max,
             marks=marks,
             step=step,
-            value=value),
-    ], style={'margin': '25px 5px 30px 0px'},)
+            value=value)
+        ],
+        style={'margin': '25px 5px 30px 0px'},
+        hidden=hidden
+    )
+
+    return div
 
 main_app = html.Div(
     className="container",
