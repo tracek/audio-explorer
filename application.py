@@ -223,7 +223,7 @@ app.layout = html.Div([
                     'width': '75%',
                     'margin': '30px auto',
                 },
-                children=dcc.Markdown(description_md)
+                children=dcc.Markdown(about_md)
             )
         ]),
     ])
