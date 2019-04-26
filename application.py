@@ -36,7 +36,7 @@ app = dash.Dash(__name__, external_stylesheets=['https://codepen.io/chriddyp/pen
 dash_upload_components.decorate_server(app.server, "uploads")
 application = app.server
 
-with open('app_description.md', 'r') as file:
+with open('docs/app_description.md', 'r') as file:
     description_md = file.read()
 
 upload_style = {
