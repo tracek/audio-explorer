@@ -311,9 +311,9 @@ def plot_embeddings(filename, n_clicks, embedding_type, fftsize, bandpass, onset
         lowpass, highpass = bandpass
         min_duration = sample_len - 0.05
         fs, X = read_wave_local(filepath)
-        features = get(X, fs, n_jobs=1, selected_features=selected_features, lowcut=lowpass, highcut=highpass, block_size=fftsize,
-                       onset_detector_type='hfc', onset_silence_threshold=-90, onset_threshold=onset_threshold, min_duration_s=min_duration,
-                       sample_len=sample_len)
+        features = get(X, fs, n_jobs=1, selected_features=selected_features, lowcut=lowpass, highcut=highpass,
+                       block_size=fftsize, onset_detector_type='hfc', onset_silence_threshold=-90,
+                       onset_threshold=onset_threshold, min_duration_s=min_duration,    sample_len=sample_len)
         features_for_emb = features.drop(columns=['onset', 'offset'])
 
         params = clustering_strength_translator(embedding_type, clustering_str)
