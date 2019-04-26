@@ -58,8 +58,8 @@ def fit_and_save_with_grid(data: Union[np.ndarray, pd.DataFrame], grid_path: str
             for params in param_grid:
                 fit_and_save(data=data, output_dir=output_dir, n_jobs=1, **params)
         else:
-            Parallel(n_jobs=n_jobs, backend='loky')(delayed(fit_and_save)(
-                data=data, output_dir=output_dir, type=type, n_jobs=1, kwargs=params) for params in param_grid)
+            Parallel(n_jobs=n_jobs, backend='multiprocessing')(delayed(fit_and_save)(
+                data=data, output_dir=output_dir, type=type, n_jobs=1, **params) for params in param_grid)
     else:
         fit_and_save(data=data, output_dir=output_dir, n_jobs=n_jobs)
 
