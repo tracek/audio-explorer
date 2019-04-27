@@ -322,7 +322,7 @@ def show_extra_options(value):
               [Input('upload-data', 'fileNames')])
 def convert_upload_to_wave(filenames):
     if filenames is not None:
-        remote_ip = str(request.environ.get('HTTP_X_REAL_IP', request.remote_addr))
+        remote_ip = str(request.environ.get('HTTP_X_FORWARDED_FOR', request.remote_addr))
         filepath = 'uploads/' + filenames[-1]
         time_now = datetime.now().strftime("%Y-%m-%d_%H:%M:%S")
         filename, ext = os.path.splitext(os.path.basename(filepath))
