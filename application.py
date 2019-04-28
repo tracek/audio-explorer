@@ -327,7 +327,10 @@ def convert_upload_to_wave(filenames):
         if request.headers.getlist("X-Forwarded-For"):
             user_ip = request.headers.getlist("X-Forwarded-For")[0]
         else:
-            user_ip = request.remote_addr + '_REMOTE_ADDR'
+            user_ip = request.remote_addr
+
+        if ',' in user_ip:
+            user_ip = user_ip.split(',')[0]
 
         filepath = 'uploads/' + filenames[-1]
         time_now = datetime.now().strftime("%Y-%m-%d_%H:%M:%S")
