@@ -324,20 +324,23 @@ def show_extra_options(value):
               [Input('upload-data', 'fileNames')])
 def convert_upload_to_wave(filenames):
     if filenames is not None:
-        remote_ip = str(request.environ.get('HTTP_X_FORWARDED_FOR', request.remote_addr))
+        if request.headers.getlist("X-Forwarded-For"):
+            user_ip = request.headers.getlist("X-Forwarded-For")[0]
+        else:
+            user_ip = request.remote_addr
+
         filepath = 'uploads/' + filenames[-1]
         time_now = datetime.now().strftime("%Y-%m-%d_%H:%M:%S")
         filename, ext = os.path.splitext(os.path.basename(filepath))
-        key = f'{filename}_{time_now}_{remote_ip}.wav'
+        key = f'{filename}_{time_now}_{user_ip}.wav'
         agent = request.headers.get('http_user_agent')
         user_os, browser = httpagentparser.simple_detect(agent)
-        forwarded_ips = request.headers.getlist("X-Forwarded-For")
+
 
         d = {'datetime': time_now,
              'user_os': user_os,
              'user_browser': browser,
-             'user_ip': remote_ip,
-             'forward_ip': ','.join(forwarded_ips),
+             'user_ip': user_ip,
              'upload': key}
         dbconnect.insert_user(d)
 
