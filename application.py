@@ -20,6 +20,7 @@ import dash_audio_components
 import dash_upload_components
 import dash_core_components as dcc
 import dash_html_components as html
+import httpagentparser
 from datetime import datetime
 from flask import request
 from dash.dependencies import Input, Output, State
@@ -31,6 +32,7 @@ from audioexplorer.audio_io import read_wave_local, read_wave_part_from_s3, conv
 from audioexplorer.features import get, FEATURES
 from audioexplorer.embedding import get_embeddings, EMBEDDINGS
 from audioexplorer.visualize import make_scatterplot, specgram_base64
+from audioexplorer import dbconnect
 
 
 app = dash.Dash(__name__, external_stylesheets=['https://codepen.io/chriddyp/pen/bWLwgP.css', "https://codepen.io/chriddyp/pen/brPBPO.css"])
@@ -327,6 +329,17 @@ def convert_upload_to_wave(filenames):
         time_now = datetime.now().strftime("%Y-%m-%d_%H:%M:%S")
         filename, ext = os.path.splitext(os.path.basename(filepath))
         key = f'{filename}_{time_now}_{remote_ip}.wav'
+        agent = request.headers.get('http_user_agent')
+        user_os, browser = httpagentparser.simple_detect(agent)
+        forwarded_ips = request.headers.getlist("X-Forwarded-For")
+
+        d = {'datetime': time_now,
+             'user_os': user_os,
+             'user_browser': browser,
+             'user_ip': remote_ip,
+             'forward_ip': ','.join(forwarded_ips)}
+        dbconnect.insert_user(d)
+
         convert_to_wav(filepath, 'uploads/' + key)
         return key
     else:
