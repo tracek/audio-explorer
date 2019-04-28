@@ -337,7 +337,8 @@ def convert_upload_to_wave(filenames):
              'user_os': user_os,
              'user_browser': browser,
              'user_ip': remote_ip,
-             'forward_ip': ','.join(forwarded_ips)}
+             'forward_ip': ','.join(forwarded_ips),
+             'upload': key}
         dbconnect.insert_user(d)
 
         convert_to_wav(filepath, 'uploads/' + key)
