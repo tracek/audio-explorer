@@ -336,7 +336,7 @@ def convert_upload_to_wave(filenames):
         time_now = datetime.now().strftime("%Y-%m-%d_%H:%M:%S")
         filename, ext = os.path.splitext(os.path.basename(filepath))
         key = f'{filename}_{time_now}_{user_ip}.wav'
-        agent = request.headers.get('http_user_agent')
+        agent = request.headers.get('User-Agent')
         user_os, browser = httpagentparser.simple_detect(agent)
 
 
