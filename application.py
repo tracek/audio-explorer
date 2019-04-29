@@ -20,19 +20,18 @@ import dash_audio_components
 import dash_upload_components
 import dash_core_components as dcc
 import dash_html_components as html
-import httpagentparser
 from datetime import datetime
 from flask import request
 from dash.dependencies import Input, Output, State
 from dash.exceptions import PreventUpdate
 from botocore.client import Config
 
-from settings import S3_BUCKET
+from settings import S3_BUCKET, AWS_REGION
 from audioexplorer.audio_io import read_wave_local, read_wave_part_from_s3, convert_to_wav
 from audioexplorer.features import get, FEATURES
 from audioexplorer.embedding import get_embeddings, EMBEDDINGS
 from audioexplorer.visualize import make_scatterplot, specgram_base64
-from audioexplorer import dbconnect
+from audioexplorer import session_log
 
 
 app = dash.Dash(__name__, external_stylesheets=['https://codepen.io/chriddyp/pen/bWLwgP.css', "https://codepen.io/chriddyp/pen/brPBPO.css"])
@@ -85,6 +84,9 @@ main_app = html.Div(
         dcc.Store(id='signed-url-store', storage_type='memory'),
         dcc.Store(id='feature-store', storage_type='memory'),
         dcc.Store(id='filename-store', storage_type='memory'),
+        dcc.Store(id='mapping-store', storage_type='memory'),
+        dcc.Store(id='userdata-store', storage_type='memory'),
+        dcc.Store(id='dummy-store', storage_type='memory'),
 
         # Body
         html.Div(className="row", children=[
@@ -253,7 +255,7 @@ def generate_signed_url(key: str):
     :param key: bucket key
     :return: signed url
     """
-    s3_client = boto3.client('s3', region_name='eu-central-1', config=Config(signature_version='s3v4'))
+    s3_client = boto3.client('s3', region_name=AWS_REGION, config=Config(signature_version='s3v4'))
     url = s3_client.generate_presigned_url('get_object', Params={'Bucket': S3_BUCKET, 'Key': key}, ExpiresIn=3600)
     return url
 
@@ -264,6 +266,17 @@ def clustering_strength_translator(type, value):
     elif type == 'tsne':
         return {'perplexity': value}
     return None
+
+
+def get_user_ip():
+    if request.headers.getlist("X-Forwarded-For"):
+        user_ip = request.headers.getlist("X-Forwarded-For")[0]
+    else:
+        user_ip = request.remote_addr
+    if ',' in user_ip:
+        user_ip = user_ip.split(',')[0]
+    return user_ip
+
 
 
 @app.callback(Output('features-container', 'children'),
@@ -311,6 +324,7 @@ def display_value(value):
 def display_value(value):
     return f'Number of neighbours: {value}'
 
+
 @app.callback(Output('slidercontainer-embedding-neighbours', 'style'),
               [Input('algorithm-dropdown', 'value')])
 def show_extra_options(value):
@@ -320,37 +334,129 @@ def show_extra_options(value):
         return {'display': 'none'}
 
 
-@app.callback(Output('filename-store', 'data'),
+@app.callback(Output('mapping-store', 'data'),
               [Input('upload-data', 'fileNames')])
-def convert_upload_to_wave(filenames):
+def create_file_key_mapping(filenames):
     if filenames is not None:
-        if request.headers.getlist("X-Forwarded-For"):
-            user_ip = request.headers.getlist("X-Forwarded-For")[0]
-        else:
-            user_ip = request.remote_addr
-
-        if ',' in user_ip:
-            user_ip = user_ip.split(',')[0]
-
+        user_ip = get_user_ip()
         filepath = 'uploads/' + filenames[-1]
         time_now = datetime.now().strftime("%Y-%m-%d_%H:%M:%S")
         filename, ext = os.path.splitext(os.path.basename(filepath))
         key = f'{filename}_{time_now}_{user_ip}.wav'
-        agent = request.headers.get('User-Agent')
-        user_os, browser = httpagentparser.simple_detect(agent)
-
-
-        d = {'datetime': time_now,
-             'user_os': user_os,
-             'user_browser': browser,
-             'user_ip': user_ip,
-             'upload': key}
-        dbconnect.insert_user(d)
-
-        convert_to_wav(filepath, 'uploads/' + key)
-        return key
+        return {'key': key, 'filepath': filepath, 'time': time_now}
     else:
         raise PreventUpdate
+
+
+@app.callback(Output('filename-store', 'data'),
+              [Input('mapping-store', 'data')])
+def convert(mapping):
+    convert_to_wav(input_path=mapping['filepath'], output_path='uploads/' + mapping['key'])
+    return mapping['key']
+
+
+@app.callback(Output('userdata-store', 'data'),
+             [Input('mapping-store', 'data'),
+              Input('apply-button', 'n_clicks')],
+             [State('algorithm-dropdown', 'value'),
+              State('fft-size', 'value'),
+              State('bandpass', 'value'),
+              State('onset-threshold', 'value'),
+              State('sample-len', 'value'),
+              State('features-selection', 'values')])
+def log_upload(mapping, apply_clicks, embedding_type, fftsize, bandpass, onset_threshold, sample_len, selected_features):
+    if apply_clicks:
+        action_type = 'Reload'
+        time = datetime.now().strftime("%Y-%m-%d_%H:%M:%S")
+    else:
+        action_type = 'Upload'
+        time = mapping['time']
+
+    user_ip = get_user_ip()
+    agent = request.headers.get('User-Agent')
+    user_data = session_log.insert_user(
+        datetime=time,
+        filename=mapping['key'],
+        agent=agent,
+        user_ip=user_ip,
+        embedding_type=embedding_type,
+        fftsize=fftsize,
+        bandpass=bandpass,
+        onset_threshold=onset_threshold,
+        sample_len=sample_len,
+        selected_features=selected_features,
+        action_type=action_type)
+    return user_data
+
+# @app.callback(Output('dummy-store', 'data'),
+#              [Input('apply-button', 'n_clicks')],
+#              [State('mapping-store', 'data'),
+#               State('algorithm-dropdown', 'value'),
+#               State('fft-size', 'value'),
+#               State('bandpass', 'value'),
+#               State('onset-threshold', 'value'),
+#               State('sample-len', 'value'),
+#               State('features-selection', 'values')])
+# def log_apply(n_clicks, mapping, embedding_type, fftsize, bandpass, onset_threshold, sample_len, selected_features):
+#     log_upload(mapping={'datetime': datetime.now().strftime("%Y-%m-%d_%H:%M:%S")})
+#
+#     user_ip = get_user_ip()
+#     agent = request.headers.get('User-Agent')
+#     user_data = dbconnect.insert_user(
+#         datetime=datetime.now().strftime("%Y-%m-%d_%H:%M:%S"),
+#         filename=mapping['key'],
+#         agent=agent,
+#         user_ip=user_ip,
+#         embedding_type=embedding_type,
+#         fftsize=fftsize,
+#         bandpass=bandpass,
+#         onset_threshold=onset_threshold,
+#         sample_len=sample_len,
+#         selected_features=selected_features,
+#         action_type='Reload')
+#     raise PreventUpdate
+
+#
+# @app.callback(Output('filename-store', 'data'),
+#               [Input('upload-data', 'fileNames')],
+#               [State('algorithm-dropdown', 'value'),
+#                State('fft-size', 'value'),
+#                State('bandpass', 'value'),
+#                State('onset-threshold', 'value'),
+#                State('sample-len', 'value'),
+#                State('embedding-neighbours', 'value'),
+#                State('features-selection', 'values')])
+# def convert_to_wave_and_log(filenames, embedding_type, fftsize, bandpass, onset_threshold, sample_len, neighbours,
+#                             selected_features):
+#     if filenames is not None:
+#         if request.headers.getlist("X-Forwarded-For"):
+#             user_ip = request.headers.getlist("X-Forwarded-For")[0]
+#         else:
+#             user_ip = request.remote_addr
+#
+#         if ',' in user_ip:
+#             user_ip = user_ip.split(',')[0]
+#
+#         filepath = 'uploads/' + filenames[-1]
+#         time_now = datetime.now().strftime("%Y-%m-%d_%H:%M:%S")
+#         filename, ext = os.path.splitext(os.path.basename(filepath))
+#         key = f'{filename}_{time_now}_{user_ip}.wav'
+#
+#
+#         agent = request.headers.get('User-Agent')
+#         user_os, browser = httpagentparser.simple_detect(agent)
+#
+#         d = {'datetime': time_now,
+#              'user_os': user_os,
+#              'user_browser': browser,
+#              'user_ip': user_ip,
+#              'upload': key}
+#         dbconnect.insert_user(d)
+#
+#         convert_to_wav(filepath, 'uploads/' + key)
+#         return key
+#     else:
+#         raise PreventUpdate
 
 
 @app.callback(Output('signed-url-store', 'data'),
@@ -414,8 +520,8 @@ def plot_embeddings(filename, n_clicks, embedding_type, fftsize, bandpass, onset
 
 
 @app.callback(Output('audio-player', 'overrideProps'),
-              [Input('graph', 'clickData'),
-               Input('signed-url-store', 'data')])
+              [Input('graph', 'clickData')],
+              [State('signed-url-store', 'data')])
 def update_player_status(click_data, url):
     if click_data:
         start, end = click_data['points'][0]['customdata']
@@ -428,10 +534,10 @@ def update_player_status(click_data, url):
 
 
 @app.callback(Output('div-spectrogram', 'children'),
-              [Input('graph', 'clickData'),
-               Input('filename-store', 'data')])
+              [Input('graph', 'clickData')],
+              [State('signed-url-store', 'data')])
 def display_click_image(click_data, url):
-    if (click_data is not None) and (url is not None):
+    if click_data is not None:
         start, end = click_data['points'][0]['customdata']
         wav = read_wave_part_from_s3(
             bucket=S3_BUCKET,
