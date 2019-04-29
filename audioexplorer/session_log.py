@@ -54,21 +54,19 @@ def insert_user(datetime, filename, agent, user_ip, embedding_type, fftsize, ban
 
 @lru_cache(maxsize=1)
 def get_ipinfo(ip_address: str) -> dict:
-    try:
-        apikey = get_ipinfo_secret()
-        ipinfo_handler = ipinfo.getHandler(apikey)
-        details = ipinfo_handler.getDetails(ip_address).all
-        d = {'user_hostname': details['hostname'],
-             'user_city': details['city'],
-             'user_region': details['region'],
-             'user_country_code': details['country'],
-             'user_country_name': details['country_name'],
-             'user_latitude': details['latitude'],
-             'user_longitude': details['longitude'],
-             'user_loc': details['loc'],
-             'user_org': details['org']}
-    except:
-        d = {}
+    apikey = get_ipinfo_secret()
+    ipinfo_handler = ipinfo.getHandler(apikey)
+    details = ipinfo_handler.getDetails(ip_address).all
+    d = {'user_hostname': details.get('hostname', None),
+         'user_city': details.get('city', None),
+         'user_region': details.get('region', None),
+         'user_country_code': details.get('country', None),
+         'user_country_name': details.get('country_name', None),
+         'user_latitude': details.get('latitude', None),
+         'user_longitude': details.get('longitude', None),
+         'user_loc': details.get('loc', None),
+         'user_org': details.get('org', None)}
+
     return d
 
 
