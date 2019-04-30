@@ -30,3 +30,4 @@ Problem: Elastic Beanstalk deployment via Docker fails due thin pool getting ful
 Solution: 
 * Use EC2 that has a drive with sufficient space (mind most of EC2 uses EBS volumes)
 * Follow instructions from [Server Fault](https://serverfault.com/questions/840937/aws-elasticbeanstalk-docker-thin-pool-getting-full-and-causing-re-mount-of-files)
+

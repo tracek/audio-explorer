@@ -13,7 +13,6 @@
 #     limitations under the License.
 
 import json
-import uuid
 import ipinfo
 import httpagentparser
 import sqlalchemy as db
@@ -23,11 +22,10 @@ from settings import DB_ENGINE, DB_USER, DB_DATABASE_NAME, DB_HOSTNAME, DB_PASSW
 
 engine = db.create_engine(f'{DB_ENGINE}://{DB_USER}:{DB_PASSWORD}@{DB_HOSTNAME}/{DB_DATABASE_NAME}')
 metadata = db.MetaData(bind=engine, reflect=True)
-session_id = str(uuid.uuid4())
 
 
 def insert_user(datetime, filename, agent, user_ip, embedding_type, fftsize, bandpass, onset_threshold, sample_len,
-                selected_features, action_type):
+                selected_features, action_type, session_id):
     user_os, browser = httpagentparser.simple_detect(agent)
 
     d = {'datetime': datetime,
@@ -37,11 +35,11 @@ def insert_user(datetime, filename, agent, user_ip, embedding_type, fftsize, ban
          'filename': filename,
          'embedding_type': embedding_type,
          'fft_size': fftsize,
-         'filter_lowpass': bandpass[0],
-         'filter_highpass': bandpass[1],
+         'filter_lowpass': bandpass[0] if bandpass else None,
+         'filter_highpass': bandpass[1] if bandpass else None,
          'onset_threshold': onset_threshold,
          'sample_len': sample_len,
-         'selected_features': ','.join(selected_features),
+         'selected_features': ','.join(selected_features) if selected_features else None,
          'user_action_type': action_type,
          'user_session_id': session_id}
 
@@ -50,6 +48,17 @@ def insert_user(datetime, filename, agent, user_ip, embedding_type, fftsize, ban
     users = metadata.tables['users']
     users.insert().values(**d).execute()
     return d
+
+
+def first_session(session_id):
+    text = db.text('user_session_id = :uuid')
+    text = text.bindparams(uuid=session_id)
+    users = metadata.tables['users']
+    r = users.select(text).execute().fetchone()
+    if r:
+        return False
+    else:
+        return True
 
 
 @lru_cache(maxsize=1)

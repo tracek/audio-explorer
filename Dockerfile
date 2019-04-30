@@ -20,8 +20,7 @@ RUN conda install -c conda-forge --quiet --yes \
     psycopg2
 
 RUN pip install --no-cache-dir httpagentparser ipinfo dash_audio_components dash_upload_components==0.0.2 \
-    dash==0.41.0 \
-    plotly==3.8.1 \
+    dash==0.42.0 \
     sox==1.3.7
 
 COPY . /app

@@ -13,6 +13,7 @@
 #     limitations under the License.
 
 import os
+import uuid
 import boto3
 import dash
 import dash_table
@@ -51,7 +52,6 @@ upload_style = {
     'textAlign': 'center',
     'margin': '15px auto'
 }
-
 
 def NamedSlider(id, min, max, value, step=None, marks=None, slider_type=dcc.Slider, hidden=False):
     div = html.Div([
@@ -219,27 +219,28 @@ table = html.Div(
     ]
 )
 
+
 app.layout = html.Div([
-    dcc.Tabs(id='tabs', children=[
-        dcc.Tab(label='Explore', children=[
-            main_app
-        ]),
-        dcc.Tab(label='Table', children=[
-            html.Div(
-                children=table
-            )
-        ]),
-        dcc.Tab(label='About', children=[
-            html.Div(
-                style={
-                    'width': '75%',
-                    'margin': '30px auto',
-                },
-                children=dcc.Markdown(description_md)
-            )
-        ]),
+        dcc.Tabs(id='tabs', children=[
+            dcc.Tab(label='Explore', children=[
+                main_app
+            ]),
+            dcc.Tab(label='Table', children=[
+                html.Div(
+                    children=table
+                )
+            ]),
+            dcc.Tab(label='About', children=[
+                html.Div(
+                    style={
+                        'width': '75%',
+                        'margin': '30px auto',
+                    },
+                    children=dcc.Markdown(description_md)
+                )
+            ]),
+        ])
     ])
-])
 
 
 def copy_file_to_bucket(filepath_input, key):
@@ -293,6 +294,20 @@ def show_features_in_table(data):
         pagination_settings={'page_size': 20, 'current_page': 0}
     )
     return feature_table
+
+
+@app.callback(Output('dummy-store', 'data'),
+              [Input('fft-size', 'value')])
+def display_value(value):
+    session_id = str(uuid.uuid4())
+    if session_log.first_session(session_id):
+        log_user_action(
+            action_type='Login',
+            datetime=datetime.now().strftime("%Y-%m-%d_%H:%M:%S"),
+            session_id=session_id
+        )
+    return session_id
+
 
 
 @app.callback(Output('name-fft-size', 'children'),
@@ -363,8 +378,9 @@ def convert(mapping):
               State('bandpass', 'value'),
               State('onset-threshold', 'value'),
               State('sample-len', 'value'),
-              State('features-selection', 'values')])
-def log_upload(mapping, apply_clicks, embedding_type, fftsize, bandpass, onset_threshold, sample_len, selected_features):
+              State('features-selection', 'values'),
+              State('dummy-store', 'data')])
+def log_user_action_cb(mapping, apply_clicks, embedding_type, fftsize, bandpass, onset_threshold, sample_len, selected_features, session_id):
     if apply_clicks:
         action_type = 'Reload'
         time = datetime.now().strftime("%Y-%m-%d_%H:%M:%S")
@@ -372,11 +388,31 @@ def log_upload(mapping, apply_clicks, embedding_type, fftsize, bandpass, onset_t
         action_type = 'Upload'
         time = mapping['time']
 
+    user_data = log_user_action(
+        action_type=action_type,
+        datetime=time,
+        session_id=session_id,
+        filename=mapping['key'],
+        embedding_type=embedding_type,
+        fftsize=fftsize,
+        bandpass=bandpass,
+        onset_threshold=onset_threshold,
+        sample_len=sample_len,
+        selected_features=selected_features
+    )
+
+    return user_data
+
+
+def log_user_action(action_type, datetime, session_id, filename=None, embedding_type=None, fftsize=None, bandpass=None,
+                    onset_threshold=None, sample_len=None, selected_features=None):
     user_ip = get_user_ip()
     agent = request.headers.get('User-Agent')
     user_data = session_log.insert_user(
-        datetime=time,
-        filename=mapping['key'],
+        action_type=action_type,
+        datetime=datetime,
+        session_id=session_id,
+        filename=filename,
         agent=agent,
         user_ip=user_ip,
         embedding_type=embedding_type,
@@ -385,78 +421,9 @@ def log_upload(mapping, apply_clicks, embedding_type, fftsize, bandpass, onset_t
         onset_threshold=onset_threshold,
         sample_len=sample_len,
         selected_features=selected_features,
-        action_type=action_type)
+    )
+
     return user_data
-
-# @app.callback(Output('dummy-store', 'data'),
-#              [Input('apply-button', 'n_clicks')],
-#              [State('mapping-store', 'data'),
-#               State('algorithm-dropdown', 'value'),
-#               State('fft-size', 'value'),
-#               State('bandpass', 'value'),
-#               State('onset-threshold', 'value'),
-#               State('sample-len', 'value'),
-#               State('features-selection', 'values')])
-# def log_apply(n_clicks, mapping, embedding_type, fftsize, bandpass, onset_threshold, sample_len, selected_features):
-#     log_upload(mapping={'datetime': datetime.now().strftime("%Y-%m-%d_%H:%M:%S")})
-#
-#     user_ip = get_user_ip()
-#     agent = request.headers.get('User-Agent')
-#     user_data = dbconnect.insert_user(
-#         datetime=datetime.now().strftime("%Y-%m-%d_%H:%M:%S"),
-#         filename=mapping['key'],
-#         agent=agent,
-#         user_ip=user_ip,
-#         embedding_type=embedding_type,
-#         fftsize=fftsize,
-#         bandpass=bandpass,
-#         onset_threshold=onset_threshold,
-#         sample_len=sample_len,
-#         selected_features=selected_features,
-#         action_type='Reload')
-#     raise PreventUpdate
-
-#
-# @app.callback(Output('filename-store', 'data'),
-#               [Input('upload-data', 'fileNames')],
-#               [State('algorithm-dropdown', 'value'),
-#                State('fft-size', 'value'),
-#                State('bandpass', 'value'),
-#                State('onset-threshold', 'value'),
-#                State('sample-len', 'value'),
-#                State('embedding-neighbours', 'value'),
-#                State('features-selection', 'values')])
-# def convert_to_wave_and_log(filenames, embedding_type, fftsize, bandpass, onset_threshold, sample_len, neighbours,
-#                             selected_features):
-#     if filenames is not None:
-#         if request.headers.getlist("X-Forwarded-For"):
-#             user_ip = request.headers.getlist("X-Forwarded-For")[0]
-#         else:
-#             user_ip = request.remote_addr
-#
-#         if ',' in user_ip:
-#             user_ip = user_ip.split(',')[0]
-#
-#         filepath = 'uploads/' + filenames[-1]
-#         time_now = datetime.now().strftime("%Y-%m-%d_%H:%M:%S")
-#         filename, ext = os.path.splitext(os.path.basename(filepath))
-#         key = f'{filename}_{time_now}_{user_ip}.wav'
-#
-#
-#         agent = request.headers.get('User-Agent')
-#         user_os, browser = httpagentparser.simple_detect(agent)
-#
-#         d = {'datetime': time_now,
-#              'user_os': user_os,
-#              'user_browser': browser,
-#              'user_ip': user_ip,
-#              'upload': key}
-#         dbconnect.insert_user(d)
-#
-#         convert_to_wav(filepath, 'uploads/' + key)
-#         return key
-#     else:
-#         raise PreventUpdate
 
 
 @app.callback(Output('signed-url-store', 'data'),
