@@ -261,12 +261,12 @@ def generate_signed_url(key: str):
     return url
 
 
-def clustering_strength_translator(type, value):
+def map_parameters(type, value):
     if type in ['umap', 'isomap']:
         return {'n_neighbors': value}
     elif type == 'tsne':
         return {'perplexity': value}
-    return None
+    return {}
 
 
 def get_user_ip():
@@ -462,7 +462,7 @@ def plot_embeddings(filename, n_clicks, embedding_type, fftsize, bandpass, onset
                        onset_threshold=onset_threshold, min_duration_s=min_duration,    sample_len=sample_len)
         features_for_emb = features.drop(columns=['onset', 'offset'])
 
-        params = clustering_strength_translator(embedding_type, neighbours)
+        params = map_parameters(embedding_type, neighbours)
 
         try:
             embeddings, warning_msg = get_embeddings(features_for_emb, type=embedding_type, n_jobs=1, **params)
