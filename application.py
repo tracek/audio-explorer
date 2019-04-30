@@ -502,7 +502,7 @@ def update_player_status(click_data, url):
 
 @app.callback(Output('div-spectrogram', 'children'),
               [Input('graph', 'clickData')],
-              [State('signed-url-store', 'data')])
+              [State('filename-store', 'data')])
 def display_click_image(click_data, url):
     if click_data is not None:
         start, end = click_data['points'][0]['customdata']
