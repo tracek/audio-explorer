@@ -1,4 +1,22 @@
 # Elastic Beanstalk Files
 .elasticbeanstalk/*
-.git
 .gitignore
+.dockerignore
+Dockerfile
+db.sqlite3
+__pycache__
+*.pyc
+*.pyo
+*.pyd
+.Python
+env
+pip-log.txt
+pip-delete-this-directory.txt
+.tox
+.coverage
+.coverage.*
+.cache
+coverage.xml
+*,cover
+*.log
+.git
