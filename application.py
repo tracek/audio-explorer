@@ -311,8 +311,8 @@ def resolve_filtering_expression(df: pd.DataFrame, filter: str):
     match = re.search('|'.join(ops.keys()), filter)
     if match:
         operator_s = filter[match.start(): match.end()]
-        col_name = filter.split(operator_s)[0].replace('\"', '').rstrip()
-        filter_value = float(filter.split(operator_s)[1])
+        col_name = filter[:match.start()].replace('\"', '').replace(' ','')
+        filter_value = float(filter[match.end()+1:])
         condition = ops[operator_s](df[col_name], filter_value)
 
     return condition
