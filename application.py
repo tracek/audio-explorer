@@ -311,28 +311,32 @@ def show_features_in_table(data):
 @app.callback(
     Output('features-table', "data"),
     [Input('feature-store', 'data'),
+     Input('graph', 'selectedData'),
      Input('features-table', "pagination_settings"),
      Input('features-table', "sorting_settings"),
      Input('features-table', "filtering_settings")])
-def update_table(data, pagination_settings, sorting_settings, filtering_settings):
+def update_table(data, select_data, pagination_settings, sorting_settings, filtering_settings):
     filtering_expressions = filtering_settings.split(' && ')
-    dff = pd.DataFrame(data)
+    df = pd.DataFrame(data)
+    if select_data:
+        selected_points = [point['pointIndex'] for point in select_data['points']]
+        df = df.loc[selected_points]
     for filter in filtering_expressions:
         if ' eq ' in filter:
             col_name = filter.split(' eq ')[0]
             filter_value = filter.split(' eq ')[1]
-            dff = dff.loc[dff[col_name] == filter_value]
+            df = df.loc[df[col_name] == filter_value]
         if ' > ' in filter:
             col_name = filter.split(' > ')[0]
             filter_value = float(filter.split(' > ')[1])
-            dff = dff.loc[dff[col_name] > filter_value]
+            df = df.loc[df[col_name] > filter_value]
         if ' < ' in filter:
             col_name = filter.split(' < ')[0]
             filter_value = float(filter.split(' < ')[1])
-            dff = dff.loc[dff[col_name] < filter_value]
+            df = df.loc[df[col_name] < filter_value]
 
     if len(sorting_settings):
-        dff = dff.sort_values(
+        df = df.sort_values(
             [col['column_id'] for col in sorting_settings],
             ascending=[
                 col['direction'] == 'asc'
@@ -341,7 +345,7 @@ def update_table(data, pagination_settings, sorting_settings, filtering_settings
             inplace=False
         )
 
-    return dff.iloc[
+    return df.iloc[
         pagination_settings['current_page']*pagination_settings['page_size']:
         (pagination_settings['current_page'] + 1)*pagination_settings['page_size']
     ].to_dict('records')
@@ -454,17 +458,6 @@ def log_user_action_cb(mapping, apply_clicks, embedding_type, fftsize, bandpass,
 
     return user_data
 
-#
-# @app.callback(Output('table', 'data'),
-#               [Input('storm-petrel-embedding', 'selectedData')],
-#               [State('feature-store', 'data')])
-# def user_selected_points(selectData, features):
-#     if selectData:
-#         selected_points = [point['pointIndex'] for point in selectData['points']]
-#         return df_view.loc[selected_points].to_dict("rows")
-#     else:
-#         return df.to_dict("rows")
-
 
 def log_user_action(action_type, datetime, session_id, filename=None, embedding_type=None, fftsize=None, bandpass=None,
                     onset_threshold=None, sample_len=None, selected_features=None):
@@ -497,7 +490,7 @@ def upload_to_s3(filename):
         url = generate_signed_url(filename)
         return url
     else:
-        raise PreventUpdate()
+        raise PreventUpdate
 
 
 @app.callback([Output('graph', 'figure'),
@@ -545,7 +538,7 @@ def plot_embeddings(filename, n_clicks, embedding_type, fftsize, bandpass, onset
         except Exception as ex:
             return dcc.Graph(), None, str(ex)
     else:
-        raise PreventUpdate()
+        raise PreventUpdate
 
 
 @app.callback(Output('audio-player', 'overrideProps'),
@@ -559,7 +552,7 @@ def update_player_status(click_data, url):
                 'from_position': start - 0.2,
                 'to_position': end + 0.2}
     else:
-        raise PreventUpdate()
+        raise PreventUpdate
 
 
 @app.callback(Output('div-spectrogram', 'children'),
