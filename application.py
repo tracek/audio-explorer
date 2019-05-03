@@ -17,6 +17,8 @@
 
 import os
 import uuid
+import re
+import operator
 import boto3
 import dash
 import dash_table
@@ -25,6 +27,7 @@ import dash_upload_components
 import dash_core_components as dcc
 import dash_html_components as html
 import pandas as pd
+import urllib.parse
 from datetime import datetime
 from flask import request
 from dash.dependencies import Input, Output, State
@@ -233,7 +236,20 @@ app.layout = html.Div([
             dcc.Tab(label='Table', children=[
                 html.Div(
                     children=table
-                )
+                ),
+                html.A(
+                    'Download Data',
+                    id='download-link',
+                    download="selection.csv",
+                    href="",
+                    target="_blank",
+                    style={
+                        'width': '90%',
+                        'max-width': 'none',
+                        'font-size': '1.5rem',
+                        'padding': '30px 100px'
+                    }
+                ),
             ]),
             dcc.Tab(label='About', children=[
                 html.Div(
@@ -284,6 +300,23 @@ def get_user_ip():
     return user_ip
 
 
+def resolve_filtering_expression(df: pd.DataFrame, filter: str):
+    condition = None
+    ops = {
+        ">": operator.gt,
+        "<": operator.lt,
+        ">=": operator.ge,
+        "<=": operator.le
+    }
+    match = re.search('|'.join(ops.keys()), filter)
+    if match:
+        operator_s = filter[match.start(): match.end()]
+        col_name = filter.split(operator_s)[0].replace('\"', '').rstrip()
+        filter_value = float(filter.split(operator_s)[1])
+        condition = ops[operator_s](df[col_name], filter_value)
+
+    return condition
+
 
 @app.callback(Output('features-container', 'children'),
               [Input('feature-store', 'data')])
@@ -322,18 +355,9 @@ def update_table(data, select_data, pagination_settings, sorting_settings, filte
         selected_points = [point['pointIndex'] for point in select_data['points']]
         df = df.loc[selected_points]
     for filter in filtering_expressions:
-        if ' eq ' in filter:
-            col_name = filter.split(' eq ')[0]
-            filter_value = filter.split(' eq ')[1]
-            df = df.loc[df[col_name] == filter_value]
-        if ' > ' in filter:
-            col_name = filter.split(' > ')[0]
-            filter_value = float(filter.split(' > ')[1])
-            df = df.loc[df[col_name] > filter_value]
-        if ' < ' in filter:
-            col_name = filter.split(' < ')[0]
-            filter_value = float(filter.split(' < ')[1])
-            df = df.loc[df[col_name] < filter_value]
+        condition = resolve_filtering_expression(df=df, filter=filter)
+        if condition is not None:
+            df = df.loc[condition]
 
     if len(sorting_settings):
         df = df.sort_values(
@@ -350,6 +374,18 @@ def update_table(data, select_data, pagination_settings, sorting_settings, filte
         (pagination_settings['current_page'] + 1)*pagination_settings['page_size']
     ].to_dict('records')
 
+
+@app.callback(Output('download-link', 'href'),
+              [Input('graph', 'selectedData'),
+               Input('feature-store', 'data')])
+def update_download_link(select_data, data):
+    df = pd.DataFrame(data)
+    if select_data:
+        selected_points = [point['pointIndex'] for point in select_data['points']]
+        df = df.loc[selected_points]
+    csv_string = df.to_csv(index=False, encoding='utf-8')
+    csv_string = "data:text/csv;charset=utf-8," + urllib.parse.quote(csv_string)
+    return csv_string
 
 
 @app.callback(Output('dummy-store', 'data'),
