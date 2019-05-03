@@ -24,6 +24,7 @@ import dash_audio_components
 import dash_upload_components
 import dash_core_components as dcc
 import dash_html_components as html
+import pandas as pd
 from datetime import datetime
 from flask import request
 from dash.dependencies import Input, Output, State
@@ -39,6 +40,7 @@ from audioexplorer import session_log
 
 
 app = dash.Dash(__name__, external_stylesheets=['https://codepen.io/chriddyp/pen/bWLwgP.css', "https://codepen.io/chriddyp/pen/brPBPO.css"])
+app.config['suppress_callback_exceptions']=True
 dash_upload_components.decorate_server(app.server, "uploads")
 application = app.server
 
@@ -293,10 +295,57 @@ def show_features_in_table(data):
         id='features-table',
         columns=[{'name': i, 'id': i} for i in data[0].keys()],
         data=data,
-        pagination_mode='fe',
-        pagination_settings={'page_size': 20, 'current_page': 0}
+        pagination_settings={'page_size': 20, 'current_page': 0},
+        pagination_mode='be',
+
+        filtering='be',
+        filtering_settings='',
+
+        sorting='be',
+        sorting_type='multi',
+        sorting_settings=[]
     )
     return feature_table
+
+
+@app.callback(
+    Output('features-table', "data"),
+    [Input('feature-store', 'data'),
+     Input('features-table', "pagination_settings"),
+     Input('features-table', "sorting_settings"),
+     Input('features-table', "filtering_settings")])
+def update_table(data, pagination_settings, sorting_settings, filtering_settings):
+    filtering_expressions = filtering_settings.split(' && ')
+    dff = pd.DataFrame(data)
+    for filter in filtering_expressions:
+        if ' eq ' in filter:
+            col_name = filter.split(' eq ')[0]
+            filter_value = filter.split(' eq ')[1]
+            dff = dff.loc[dff[col_name] == filter_value]
+        if ' > ' in filter:
+            col_name = filter.split(' > ')[0]
+            filter_value = float(filter.split(' > ')[1])
+            dff = dff.loc[dff[col_name] > filter_value]
+        if ' < ' in filter:
+            col_name = filter.split(' < ')[0]
+            filter_value = float(filter.split(' < ')[1])
+            dff = dff.loc[dff[col_name] < filter_value]
+
+    if len(sorting_settings):
+        dff = dff.sort_values(
+            [col['column_id'] for col in sorting_settings],
+            ascending=[
+                col['direction'] == 'asc'
+                for col in sorting_settings
+            ],
+            inplace=False
+        )
+
+    return dff.iloc[
+        pagination_settings['current_page']*pagination_settings['page_size']:
+        (pagination_settings['current_page'] + 1)*pagination_settings['page_size']
+    ].to_dict('records')
+
 
 
 @app.callback(Output('dummy-store', 'data'),
@@ -310,7 +359,6 @@ def display_value(value):
             session_id=session_id
         )
     return session_id
-
 
 
 @app.callback(Output('name-fft-size', 'children'),
@@ -405,6 +453,17 @@ def log_user_action_cb(mapping, apply_clicks, embedding_type, fftsize, bandpass,
     )
 
     return user_data
+
+#
+# @app.callback(Output('table', 'data'),
+#               [Input('storm-petrel-embedding', 'selectedData')],
+#               [State('feature-store', 'data')])
+# def user_selected_points(selectData, features):
+#     if selectData:
+#         selected_points = [point['pointIndex'] for point in selectData['points']]
+#         return df_view.loc[selected_points].to_dict("rows")
+#     else:
+#         return df.to_dict("rows")
 
 
 def log_user_action(action_type, datetime, session_id, filename=None, embedding_type=None, fftsize=None, bandpass=None,
