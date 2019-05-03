@@ -330,10 +330,8 @@ def show_features_in_table(data):
         data=data,
         pagination_settings={'page_size': 20, 'current_page': 0},
         pagination_mode='be',
-
         filtering='be',
         filtering_settings='',
-
         sorting='be',
         sorting_type='multi',
         sorting_settings=[]
