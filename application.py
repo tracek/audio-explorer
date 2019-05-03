@@ -196,12 +196,12 @@ main_app = html.Div(
                     max=100,
                     step=5,
                     marks={
-                        5: 'Low',
-                        15: 'Normal',
-                        50: 'Strong',
-                        100: 'Beyond reason'
+                        5: '5',
+                        20: '20',
+                        50: '50',
+                        100: '100'
                     },
-                    value=40
+                    value=20
                 ),
                 html.Div(id='div-spectrogram', style={'margin-top': '20px'})
             ]),
