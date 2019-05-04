@@ -1,8 +1,27 @@
-# Audio Explorer
+## Audio Explorer
 
 [Audio Explorer](http://audioexplorer.online) helps in audio data discovery and labelling by utilising unsupervised machine learning, statistics and digital signal processing.
 
 The program computes audio features per short fragments of submitted audio piece and then finds projection to 2-dimensional space by using linear or [non-linear dimensionality reduction](https://en.wikipedia.org/wiki/Nonlinear_dimensionality_reduction). Audio fragments are then represented as points; similar sample will be close together, while those which are different further apart. User can click on a point to play the audio fragment and inspect resulting [spectrogram](https://en.wikipedia.org/wiki/Spectrogram). 
+
+
+
+- [Audio Explorer](#audio-explorer)
+    + [Pre-alpha](#pre-alpha)
+    + [Why build it?](#why-build-it-)
+    + [How do we solve the problem?](#how-do-we-solve-the-problem-)
+- [Details](#details)
+    + [Building blocks](#building-blocks)
+    + [Web application](#web-application)
+      - [When user hits upload](#when-user-hits-upload)
+      - [What to do next?](#what-to-do-next-)
+    + [Command Line Interface](#command-line-interface)
+    + [Audio features](#audio-features)
+- [Development](#development)
+- [Acknowledgement](#acknowledgement)
+- [Licence](#licence)
+- [Contact information](#contact-information)
+
 
 #### Pre-alpha
 
