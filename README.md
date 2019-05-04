@@ -4,6 +4,10 @@
 
 The program computes audio features per short fragments of submitted audio piece and then finds projection to 2-dimensional space by using linear or [non-linear dimensionality reduction](https://en.wikipedia.org/wiki/Nonlinear_dimensionality_reduction). Audio fragments are then represented as points; similar sample will be close together, while those which are different further apart. User can click on a point to play the audio fragment and inspect resulting [spectrogram](https://en.wikipedia.org/wiki/Spectrogram). 
 
+#### Pre-alpha
+
+The app is a work in progress, a pre-alpha. There are a number of features coming and some of the existing, including user workflow, will change. Once the audio embedding problem is better understood, I plan to hide or remove many of the algorithm-tweaking options, so the user should not ponder whether to use 256 or 512 FFT size.  
+
 #### Why build it?
 
 Manual labelling of audio is time consuming and error prone. With this tool we aim to augment user by allowing to easily navigate recordings and label selected audio pieces. Instead of looking at raw audio, we extract number of audio features from each sample. The latter typically consists of dozens of calculated values (features), which would be impossible to visualise (e.g. 20 features per sample effectively means 20-dimensional space). Audio Explorer allows to compute over 100 features per audio fragment.
@@ -14,6 +18,8 @@ The main driver behind creation of this software were problems I faced when deve
 We take the multidimensional space of computed audio features and project it to two dimensions, while retaining most of the information that describes the sample. That means that audio pieces that sound similar will be packed closely together, while those that sound quite different should be far apart. User can select cluster of similar-sounding samples and mark them.
 
 ## Gory details
+
+This section goes into the inner-workings of the application.
 
 #### Building blocks
 The web application is made with Dash (Python + React) and is accompanied by a CLI (served through [click](https://click.palletsprojects.com/en/7.x/)). The web app is deployed with AWS Elastic Beanstalk (Docker deployment) and is supported by the following AWS services: EC2, S3, RDS, Secrets Manager, Route 53 and CloudWatch. 
