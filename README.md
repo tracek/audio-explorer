@@ -16,7 +16,7 @@ We take the multidimensional space of computed audio features and project it to 
 ## Gory details
 
 #### Building blocks
-The web application is made with Dash (Python + React) and is accompanied by a CLI (served through [click](https://click.palletsprojects.com/en/7.x/)). The web app is deployed with AWS Elastic Beanstalk and is supported by the following AWS services: EC2, S3, RDS, Secrets Manager, Route 53 and CloudWatch.
+The web application is made with Dash (Python + React) and is accompanied by a CLI (served through [click](https://click.palletsprojects.com/en/7.x/)). The web app is deployed with AWS Elastic Beanstalk and is supported by the following AWS services: EC2, S3, RDS, Secrets Manager, Route 53 and CloudWatch. 
 
 #### Behind the scenes
 
@@ -30,7 +30,26 @@ What's happening behind the scences when user hits upload:
 7. User can now use e.g. _Lasso select_ (top right menu that appears after hovering over the graph) to select interesting cluster. The selection will be reflected in _Table_.
 8. WIP: Clear noise with spectral subtraction. User will select noise and then run algorithm to remove undesired frequencies in a smart way. 
 
+##### Features
 
+Given audio fragment, we compute the following features:
+* Frequency statistics: mean, median, first, third and inter quartile 
+* Pitch statistics: mean, median, first, third and inter quartile
+* [Chroma](https://en.wikipedia.org/wiki/Chroma_feature): short-term pitch profile 
+* Linear Predictor Coefficients ([LPC](https://en.wikipedia.org/wiki/Linear_predictive_coding))
+* Line Spectral Frequency ([LSF](https://en.wikipedia.org/wiki/Line_spectral_pairs)) coefficients 
+* Mel-Frequency Cepstral Coefficients ([MFCC](https://en.wikipedia.org/wiki/Mel-frequency_cepstrum))
+* Octave Band Signal Intensity (OBSI)
+* [Spectral crest factor per band](https://en.wikipedia.org/wiki/Crest_factor)
+* Decrease: average spectral slope
+* Flatness: spectral flatness using the ratio between geometric and arithmetic mean
+* Flux: flux of spectrum between consecutives frames
+* Rolloff: frequency so that 99% of the energy is contained below
+* Variation: normalized correlation of spectrum between consecutive frames
+
+##### Onset detection
+
+We're using high-frequency content onset detection.
 
 ## Development
 
