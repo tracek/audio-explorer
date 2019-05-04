@@ -16,9 +16,9 @@ We take the multidimensional space of computed audio features and project it to 
 ## Gory details
 
 #### Building blocks
-The web application is made with Dash (Python + React) and is accompanied by a CLI (served through [click](https://click.palletsprojects.com/en/7.x/)). The web app is deployed with AWS Elastic Beanstalk and is supported by the following AWS services: EC2, S3, RDS, Secrets Manager, Route 53 and CloudWatch. 
+The web application is made with Dash (Python + React) and is accompanied by a CLI (served through [click](https://click.palletsprojects.com/en/7.x/)). The web app is deployed with AWS Elastic Beanstalk (Docker deployment) and is supported by the following AWS services: EC2, S3, RDS, Secrets Manager, Route 53 and CloudWatch. 
 
-#### Behind the scenes
+#### When user hits upload
 
 What's happening behind the scences when user hits upload: 
 1. The audio file gets uploaded to the EC2 instance.
@@ -29,6 +29,10 @@ What's happening behind the scences when user hits upload:
 6. Calculated audio features can be inspected, sorted and filtered through custom-made query language by selecting _Table_ tab.
 7. User can now use e.g. _Lasso select_ (top right menu that appears after hovering over the graph) to select interesting cluster. The selection will be reflected in _Table_.
 8. WIP: Clear noise with spectral subtraction. User will select noise and then run algorithm to remove undesired frequencies in a smart way. 
+
+#### Web appliction
+
+The web app is hosted on AWS. It scales to up to 3 instances and uses `nginx` load balancer. The traffic is secured and managed though Route 53. AWS provides a certificate too. The code repository contains complete load balancer configuration required to run the app in the wild. 
 
 ##### Features
 
@@ -58,8 +62,8 @@ See [CONTRIBUTING](CONTRIBUTING.md).
 
 ## Acknowledgement
 
-My thanks to:
-* AWS Cloud Credits for Research for supporting the project! Thanks to AWS I could rapidly prototype the models and app itself.
+My special thanks to:
+* AWS Cloud Credits for Research for supporting the project! Thanks to AWS I could rapidly prototype the models and the app itself. 
 * My colleagues from RSPB who have supplied the audio recordings and supported along the way.
 
 
