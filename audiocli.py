@@ -34,7 +34,11 @@ from audioexplorer import features, embedding
 @click.group()
 @click.option('--quiet', default=False, is_flag=True, help='Run in a silent mode')
 def cli(quiet):
-    """audiocli is a command line program that helps in extracting """
+    """
+    audiocli is a command line program that helps in extracting audio features and diemnsionality reduction. It's
+    primary purpose is to build offline embeddings for the Audio Explorer. User can create a model with large
+    volume of audio data and then use it to embed new audio files into that space.
+    """
     if quiet:
         logging.basicConfig(stream=sys.stdout, level=logging.ERROR)
     else:

@@ -12,7 +12,7 @@ The app is a work in progress, a pre-alpha. There are a number of features comin
 
 Manual labelling of audio is time consuming and error prone. With this tool we aim to augment user by allowing to easily navigate recordings and label selected audio pieces. Instead of looking at raw audio, we extract number of audio features from each sample. The latter typically consists of dozens of calculated values (features), which would be impossible to visualise (e.g. 20 features per sample effectively means 20-dimensional space). Audio Explorer allows to compute over 100 features per audio fragment.
 
-The main driver behind creation of this software were problems I faced when developing an algorithm to classify bird calls for the [Royal Society for the Protection of Birds](https://www.rspb.org.uk/). 
+The main driver behind creation of this software were problems I faced when developing an algorithm to classify bird calls for the [Royal Society for the Protection of Birds](https://www.rspb.org.uk/). Accurate species classification is needed to estimate (change in) population size and therefore crucial for biodiversity monitoring.
 
 #### How do we solve the problem?
 We take the multidimensional space of computed audio features and project it to two dimensions, while retaining most of the information that describes the sample. That means that audio pieces that sound similar will be packed closely together, while those that sound quite different should be far apart. User can select cluster of similar-sounding samples and mark them.
@@ -28,21 +28,28 @@ The web application is made with Dash (Python + React) and is accompanied by a C
 
 What's happening behind the scences when user hits upload: 
 1. The audio file gets uploaded to the EC2 instance.
-2. The file is converted to mono 16 bits per sample Waveform Audio File Format (WAV) and uploaded to S3. We'll be serving audio from signed S3 url.
-3. Search for audio onsets according to supplied parameters. The onset detection can be disabled to process complete file.
+2. The file is converted to mono 16 bits per sample Waveform Audio File Format (WAV) and uploaded to S3. We'll be serving audio from a signed S3 url (private bucket). Mind that the audio is stored, so don't upload anything confidential. In parallel, next step is executed.
+3. Search for audio onsets according to supplied parameters. The onset detection can be disabled to process complete file. 
 4. Compute selected audio features per each audio fragment.
 5. Run embedding algorithm over computed features and plot them. Each audio fragment becomes a point on the scatter plot that user can click to inspect spectrogram and play the audio.
 6. Calculated audio features can be inspected, sorted and filtered through custom-made query language by selecting _Table_ tab.
 7. User can now use e.g. _Lasso select_ (top right menu that appears after hovering over the graph) to select interesting cluster. The selection will be reflected in _Table_.
 8. WIP: Clear noise with spectral subtraction. User will select noise and then run algorithm to remove undesired frequencies in a smart way. 
 
-#### Web appliction
+
+#### Web application
 
 The web app is hosted on AWS. It scales to up to 3 instances and uses `nginx` load balancer. The traffic is secured and managed though Route 53. AWS provides a certificate too. The code repository contains complete load balancer configuration required to run the app in the wild. 
 
-##### Features
+Elastic Beanstalk automatically handles the details of capacity provisioning, load balancing, scaling, and application health monitoring.
 
-Given audio fragment, we compute the following features:
+#### Command Line Interface
+
+`audiocli` is a command line program that helps in extracting audio features and diemnsionality reduction. It's primary purpose is to build offline embeddings for the Audio Explorer. User can create a model with large volume of audio data and then use it to embed new audio files into that space.   
+
+#### Audio features
+
+Given audio fragment, thee following features are computed:
 * Frequency statistics: mean, median, first, third and inter quartile 
 * Pitch statistics: mean, median, first, third and inter quartile
 * [Chroma](https://en.wikipedia.org/wiki/Chroma_feature): short-term pitch profile 
@@ -57,9 +64,6 @@ Given audio fragment, we compute the following features:
 * Rolloff: frequency so that 99% of the energy is contained below
 * Variation: normalized correlation of spectrum between consecutive frames
 
-##### Onset detection
-
-We're using high-frequency content onset detection.
 
 ## Development
 
