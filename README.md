@@ -4,8 +4,6 @@
 
 The program computes audio features per short fragments of submitted audio piece and then finds projection to 2-dimensional space by using linear or [non-linear dimensionality reduction](https://en.wikipedia.org/wiki/Nonlinear_dimensionality_reduction). Audio fragments are then represented as points; similar sample will be close together, while those which are different further apart. User can click on a point to play the audio fragment and inspect resulting [spectrogram](https://en.wikipedia.org/wiki/Spectrogram). 
 
-
-
 - [Audio Explorer](#audio-explorer)
     + [Pre-alpha](#pre-alpha)
     + [Why build it?](#why-build-it-)
@@ -25,7 +23,7 @@ The program computes audio features per short fragments of submitted audio piece
 
 #### Pre-alpha
 
-The app is a work in progress, a pre-alpha. There are a number of features coming and some of the existing, including user workflow, will change. Once the audio embedding problem is better understood, I plan to hide or remove many of the algorithm-tweaking options, so the user should not ponder whether to use 256 or 512 FFT size.  
+The app is a work in progress, a pre-alpha. There are a number of features coming and some of the existing, including user workflow, will change. Once the audio embedding problem is better understood, I plan to hide or remove many of the algorithm-tweaking options, so the user should not ponder whether to use 256 or 512 FFT size. Good number of things can be done to improve User Experience.
 
 #### Why build it?
 
@@ -35,6 +33,18 @@ The main driver behind creation of this software were problems I faced when deve
 
 #### How do we solve the problem?
 We take the multidimensional space of computed audio features and project it to two dimensions, while retaining most of the information that describes the sample. That means that audio pieces that sound similar will be packed closely together, while those that sound quite different should be far apart. User can select cluster of similar-sounding samples and mark them.
+
+## Worflow example
+
+1. Tune the algorithm parameters or accept the defaults. 
+2. Grab an audio file you want to analyse. If you don't have anything at hand, [here](https://s3.eu-central-1.amazonaws.com/audioexplorer-public/sthelena_example.mp3) is an audio that contains some bird calls, primarily storm petrels, recorded on St. Helena. Can you spot bird calls on the scatter plot? To download the recording, right-click on the link and select "save link as..." and then *Upload* it. Audio Explorer works with majority of popular audio formats, all thanks to [sox](http://sox.sourceforge.net).
+3. Play with the parameters, add / remove features and see how it influences the plot by clicking *Apply*.
+4. Click a point on the graph to hear the audio and see the spectrogram. Mind that what you hear and see is longer than selected `Sample length` by 0.4s. 0.2s margin is added to the beginning and end to get better impression of the sound surrounding.  
+5. Calculated audio features can be inspected, sorted and filtered through custom-made query language by selecting _Table_ tab. You can use the following expressions: `<=`, `<`, `>=` and `>`, e.g. `> 2000`.
+6. Use *Lasso select* (top right menu that appears after hovering over the graph) to select interesting cluster. The selection will be reflected in *Table*.
+7. Download the selection from *Table*.
+
+There will be more to enable user to label samples and clean from the noise. Coming soon!
 
 ## Details
 
@@ -58,12 +68,6 @@ What's happening behind the scences when user hits upload:
 4. Compute selected audio features per each audio fragment.
 5. Run embedding algorithm over computed features and plot them. Each audio fragment becomes a point on the scatter plot that user can click to inspect spectrogram and play the audio.
 6. The algorithm parameters and user IP is stored in a database.
-
-##### What to do next?
-
-* Calculated audio features can be inspected, sorted and filtered through custom-made query language by selecting _Table_ tab.
-* User can now use e.g. _Lasso select_ (top right menu that appears after hovering over the graph) to select interesting cluster. The selection will be reflected in _Table_.
-* WIP: Clear noise with spectral subtraction. User will select noise and then run algorithm to remove undesired frequencies in a smart way. 
 
 
 #### Command Line Interface
@@ -104,7 +108,9 @@ My special thanks to:
 
 Audio Explorer is released under the version 3 of the GNU General Public License. Read COPYING for more details. The project is and will remain open source - that's a promise. 
 
-## Contact information
+## Contact information 
+
+Please send any questions and feedback to:
 
 ```bash
 python -c 'import base64; print(base64.b64decode("bHVrYXN6LnRyYWNld3NraUBvdXRsb29rLmNvbQ=="))'
