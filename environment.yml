@@ -19,11 +19,8 @@ dependencies:
   - pytables
   - pip:
     - awsebcli
-    - dash==0.41.0
-    - plotly==3.8.1
+    - dash==0.42.0
     - dash_audio_components
     - dash_upload_components
     - pysox
     - click
-
-
