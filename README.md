@@ -116,3 +116,7 @@ Please send any questions and feedback to:
 ```bash
 python -c 'import base64; print(base64.b64decode("bHVrYXN6LnRyYWNld3NraUBvdXRsb29rLmNvbQ=="))'
 ```
+
+or post an issue on GitHub.
+
+Cheers!
