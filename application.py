@@ -437,10 +437,10 @@ def generate_layout():
                 html.Div(
                     className="container",
                     style={
-                        'width': '95%',
+                        'width': '92%',
                         'max-width': 'none',
                         'font-size': '1.5rem',
-                        'padding': '10px 30px'
+                        'padding': '10px 10px'
                     },
                     children=[
                         dcc.Store(id='signed-url-store', storage_type='memory'),
