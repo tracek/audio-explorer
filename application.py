@@ -26,6 +26,7 @@ import dash_audio_components
 import dash_upload_components
 import dash_core_components as dcc
 import dash_html_components as html
+import numpy as np
 import pandas as pd
 import urllib.parse
 from datetime import datetime
@@ -427,6 +428,15 @@ def display_click_image(click_data, url):
                 'margin': 'auto'
             }
         )
+
+@app.callback(Output('download-link', 'href'),
+             [Input('graph', 'selectedData')],
+             [State('filename-store', 'data')])
+def audio_profile(select_data, url):
+    if select_data:
+        onsets = [point['customdata'] for point in select_data['points']]
+        wavs = [read_wave_part_from_s3(S3_BUCKET, path=url, fs=16000, start=start, end=end) for start, end in onsets]
+        wavs = np.concatenate(wavs)
 
 
 def generate_layout():
