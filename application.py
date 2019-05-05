@@ -139,12 +139,11 @@ def resolve_filtering_expression(df: pd.DataFrame, filter: str):
 @app.callback(Output('dummy-div', 'children'),
               [Input('sessionid-store', 'data')])
 def login(session_id):
-    if session_log.first_session(session_id):
-        log_user_action(
-            action_type='Login',
-            datetime=datetime.now().strftime("%Y-%m-%d_%H:%M:%S"),
-            session_id=session_id
-        )
+    log_user_action(
+        action_type='Login',
+        datetime=datetime.now().strftime("%Y-%m-%d_%H:%M:%S"),
+        session_id=session_id
+    )
     raise PreventUpdate
 
 
@@ -505,7 +504,7 @@ def generate_layout():
                                     id='fft-size',
                                     min=2 ** 7,
                                     max=2 ** 11,
-                                    marks={i: i for i in [2 ** i for i in range(7, 12)]},
+                                    marks={i: f'{i}' for i in [2 ** i for i in range(7, 12)]},
                                     value=2 ** 9
                                 ),
                                 NamedSlider(
