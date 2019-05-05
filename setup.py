@@ -1,12 +1,9 @@
-from setuptools import setup
+from setuptools import setup, find_packages
 
 setup(
     name='audiocli',
-    version='0.1',
-    py_modules=['audi-explorer'],
-    install_requires=[
-        'Click',
-    ],
+    version='0.11',
+    packages=find_packages(),
     entry_points='''
         [console_scripts]
         audiocli=audiocli:cli 
