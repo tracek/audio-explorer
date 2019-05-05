@@ -34,7 +34,7 @@ from dash.dependencies import Input, Output, State
 from dash.exceptions import PreventUpdate
 from botocore.client import Config
 
-from settings import S3_BUCKET, AWS_REGION
+from settings import S3_BUCKET, AWS_REGION, SERVE_LOCAL
 from audioexplorer.audio_io import read_wave_local, read_wave_part_from_s3, convert_to_wav
 from audioexplorer.features import get, FEATURES
 from audioexplorer.embedding import get_embeddings, EMBEDDINGS
@@ -42,7 +42,8 @@ from audioexplorer.visualize import make_scatterplot, specgram_base64
 from audioexplorer import session_log
 
 
-app = dash.Dash(__name__, external_stylesheets=['https://codepen.io/chriddyp/pen/bWLwgP.css', "https://codepen.io/chriddyp/pen/brPBPO.css"])
+app = dash.Dash(__name__, external_stylesheets=['https://codepen.io/chriddyp/pen/bWLwgP.css',
+                                                "https://codepen.io/chriddyp/pen/brPBPO.css"])
 app.config['suppress_callback_exceptions']=True
 dash_upload_components.decorate_server(app.server, "uploads")
 application = app.server
@@ -79,189 +80,6 @@ def NamedSlider(id, min, max, value, step=None, marks=None, slider_type=dcc.Slid
     )
 
     return div
-
-main_app = html.Div(
-    className="container",
-    style={
-        'width': '95%',
-        'max-width': 'none',
-        'font-size': '1.5rem',
-        'padding': '10px 30px'
-    },
-    children=[
-        dcc.Store(id='signed-url-store', storage_type='memory'),
-        dcc.Store(id='feature-store', storage_type='memory'),
-        dcc.Store(id='filename-store', storage_type='memory'),
-        dcc.Store(id='mapping-store', storage_type='memory'),
-        dcc.Store(id='userdata-store', storage_type='memory'),
-        dcc.Store(id='dummy-store', storage_type='memory'),
-
-        # Body
-        html.Div(className="row", children=[
-            html.Div(className="eight columns", children=[
-                html.Div(id='error-report', style={'color': 'red'}),
-                dcc.Graph(
-                    id='graph',
-                    style={'height': '90vh'}
-                ),
-                dash_audio_components.DashAudioComponents(
-                    id='audio-player',
-                    style={'width': '90%'},
-                    src='',
-                    autoPlay=True,
-                    controls=False
-                )
-            ]),
-            html.Div(className="four columns", children=[
-                html.Div([
-                    dash_upload_components.Upload(
-                        id='upload-data',
-                        maxFiles=1,
-                        simultaneousUploads=1,
-                        maxFileSize=10 * 1024 * 1024 * 1000,  # 1000 MB
-                        service="/upload_resumable",
-                        textLabel="UPLOAD AUDIO",
-                        startButton=False,
-                        pauseButton=False,
-                        cancelButton=False,
-                        defaultStyle=upload_style,
-                        activeStyle=upload_style,
-                        completeStyle=upload_style,
-                        completedMessage='UPLOAD AUDIO'
-                    ),
-                    html.Button('Apply', id='apply-button', style=upload_style),
-                ], style={'columnCount': 2}),
-                dcc.Dropdown(
-                    id='algorithm-dropdown',
-                    options=[{'label': label, 'value': value} for value, label in EMBEDDINGS.items()],
-                    placeholder='Select embedding',
-                    value='umap'
-                ),
-                html.H4('Select features'),
-                dcc.Checklist(
-                    id='features-selection',
-                    options=[{'label': label, 'value': value} for value, label in FEATURES.items()],
-                    values=['freq'],
-                    labelStyle={'display': 'inline-block', 'margin': '6px'}
-                ),
-                html.H4('Algorithm parameters'),
-                NamedSlider(
-                    id='fft-size',
-                    min=2**7,
-                    max=2**11,
-                    marks={i: i for i in [2**i for i in range(7,12)]},
-                    value=2**9
-                ),
-                NamedSlider(
-                    id='bandpass',
-                    min=0,
-                    max=8000,
-                    step=100,
-                    marks={
-                        0: 'None',
-                        500: '500 Hz',
-                        4000: '4000 Hz',
-                        5000: '5000 Hz',
-                        6000: '6000 Hz',
-                        8000: 'None'
-                    },
-                    value=[500, 6000],
-                    slider_type=dcc.RangeSlider
-                ),
-                NamedSlider(
-                    id='onset-threshold',
-                    min=0,
-                    max=0.1,
-                    step=0.005,
-                    marks={
-                        0: 'None',
-                        0.01: '0.01',
-                        0.05: '0.05',
-                        0.1: '0.1'
-                    },
-                    value=0.01
-                ),
-                NamedSlider(
-                    id='sample-len',
-                    min=0.1,
-                    max=1.0,
-                    step=0.01,
-                    marks={
-                        0.1: '0.1 s',
-                        0.2: '0.2 s',
-                        0.3: '0.3 s',
-                        0.5: '0.5 s',
-                        1.0: '1.0 s',
-                    },
-                    value=0.26
-                ),
-                NamedSlider(
-                    id='embedding-neighbours',
-                    min=5,
-                    max=100,
-                    step=5,
-                    marks={
-                        5: '5',
-                        20: '20',
-                        50: '50',
-                        100: '100'
-                    },
-                    value=20
-                ),
-                html.Div(id='div-spectrogram', style={'margin-top': '20px'})
-            ]),
-        ]),
-    ]
-)
-
-table = html.Div(
-    className="container",
-    style={
-        'width': '95%',
-        'max-width': 'none',
-        'font-size': '1.5rem',
-        'padding': '10px 30px'
-    },
-    children=[
-        html.Div(id='features-container')
-    ]
-)
-
-
-app.layout = html.Div([
-        dcc.Tabs(id='tabs', children=[
-            dcc.Tab(label='Explore', children=[
-                main_app
-            ]),
-            dcc.Tab(label='Table', children=[
-                html.Div(
-                    children=table
-                ),
-                html.A(
-                    'Download Data',
-                    id='download-link',
-                    download="selection.csv",
-                    href="",
-                    target="_blank",
-                    style={
-                        'width': '90%',
-                        'max-width': 'none',
-                        'font-size': '1.5rem',
-                        'padding': '30px 100px'
-                    }
-                ),
-            ]),
-            dcc.Tab(label='About', children=[
-                html.Div(
-                    style={
-                        'width': '75%',
-                        'margin': '30px auto',
-                    },
-                    children=dcc.Markdown(description_md)
-                )
-            ]),
-        ])
-    ])
 
 
 def copy_file_to_bucket(filepath_input, key):
@@ -316,6 +134,18 @@ def resolve_filtering_expression(df: pd.DataFrame, filter: str):
         condition = ops[operator_s](df[col_name], filter_value)
 
     return condition
+
+
+@app.callback(Output('dummy-div', 'children'),
+              [Input('sessionid-store', 'data')])
+def login(session_id):
+    if session_log.first_session(session_id):
+        log_user_action(
+            action_type='Login',
+            datetime=datetime.now().strftime("%Y-%m-%d_%H:%M:%S"),
+            session_id=session_id
+        )
+    raise PreventUpdate
 
 
 @app.callback(Output('features-container', 'children'),
@@ -384,19 +214,6 @@ def update_download_link(select_data, data):
     csv_string = df.to_csv(index=False, encoding='utf-8')
     csv_string = "data:text/csv;charset=utf-8," + urllib.parse.quote(csv_string)
     return csv_string
-
-
-@app.callback(Output('dummy-store', 'data'),
-              [Input('fft-size', 'value')])
-def display_value(value):
-    session_id = str(uuid.uuid4())
-    if session_log.first_session(session_id):
-        log_user_action(
-            action_type='Login',
-            datetime=datetime.now().strftime("%Y-%m-%d_%H:%M:%S"),
-            session_id=session_id
-        )
-    return session_id
 
 
 @app.callback(Output('name-fft-size', 'children'),
@@ -468,7 +285,7 @@ def convert(mapping):
               State('onset-threshold', 'value'),
               State('sample-len', 'value'),
               State('features-selection', 'values'),
-              State('dummy-store', 'data')])
+              State('sessionid-store', 'data')])
 def log_user_action_cb(mapping, apply_clicks, embedding_type, fftsize, bandpass, onset_threshold, sample_len, selected_features, session_id):
     if apply_clicks:
         action_type = 'Reload'
@@ -613,5 +430,195 @@ def display_click_image(click_data, url):
         )
 
 
+def generate_layout():
+    session_id = str(uuid.uuid4())
+    div = html.Div([
+        dcc.Tabs(id='tabs', children=[
+            dcc.Tab(label='Explore', children=[
+                html.Div(
+                    className="container",
+                    style={
+                        'width': '95%',
+                        'max-width': 'none',
+                        'font-size': '1.5rem',
+                        'padding': '10px 30px'
+                    },
+                    children=[
+                        dcc.Store(id='signed-url-store', storage_type='memory'),
+                        dcc.Store(id='feature-store', storage_type='memory'),
+                        dcc.Store(id='filename-store', storage_type='memory'),
+                        dcc.Store(id='mapping-store', storage_type='memory'),
+                        dcc.Store(id='userdata-store', storage_type='memory'),
+                        dcc.Store(id='sessionid-store', storage_type='memory', data=session_id),
+                        html.Div(id='dummy-div', style = {'display': 'none'}),
+
+                        # Body
+                        html.Div(className="row", children=[
+                            html.Div(className="eight columns", children=[
+                                html.Div(id='error-report', style={'color': 'red'}),
+                                dcc.Graph(
+                                    id='graph',
+                                    style={'height': '90vh'}
+                                ),
+                                dash_audio_components.DashAudioComponents(
+                                    id='audio-player',
+                                    style={'width': '90%'},
+                                    src='',
+                                    autoPlay=True,
+                                    controls=False
+                                )
+                            ]),
+                            html.Div(className="four columns", children=[
+                                html.Div([
+                                    dash_upload_components.Upload(
+                                        id='upload-data',
+                                        maxFiles=1,
+                                        simultaneousUploads=1,
+                                        maxFileSize=10 * 1024 * 1024 * 1000,  # 1000 MB
+                                        service="/upload_resumable",
+                                        textLabel="UPLOAD AUDIO",
+                                        startButton=False,
+                                        pauseButton=False,
+                                        cancelButton=False,
+                                        defaultStyle=upload_style,
+                                        activeStyle=upload_style,
+                                        completeStyle=upload_style,
+                                        completedMessage='UPLOAD AUDIO'
+                                    ),
+                                    html.Button('Apply', id='apply-button', style=upload_style),
+                                ], style={'columnCount': 2}),
+                                dcc.Dropdown(
+                                    id='algorithm-dropdown',
+                                    options=[{'label': label, 'value': value} for value, label in EMBEDDINGS.items()],
+                                    placeholder='Select embedding',
+                                    value='umap'
+                                ),
+                                html.H4('Select features'),
+                                dcc.Checklist(
+                                    id='features-selection',
+                                    options=[{'label': label, 'value': value} for value, label in FEATURES.items()],
+                                    values=['freq'],
+                                    labelStyle={'display': 'inline-block', 'margin': '6px'}
+                                ),
+                                html.H4('Algorithm parameters'),
+                                NamedSlider(
+                                    id='fft-size',
+                                    min=2 ** 7,
+                                    max=2 ** 11,
+                                    marks={i: i for i in [2 ** i for i in range(7, 12)]},
+                                    value=2 ** 9
+                                ),
+                                NamedSlider(
+                                    id='bandpass',
+                                    min=0,
+                                    max=8000,
+                                    step=100,
+                                    marks={
+                                        0: 'None',
+                                        500: '500 Hz',
+                                        4000: '4000 Hz',
+                                        5000: '5000 Hz',
+                                        6000: '6000 Hz',
+                                        8000: 'None'
+                                    },
+                                    value=[500, 6000],
+                                    slider_type=dcc.RangeSlider
+                                ),
+                                NamedSlider(
+                                    id='onset-threshold',
+                                    min=0,
+                                    max=0.1,
+                                    step=0.005,
+                                    marks={
+                                        0: 'None',
+                                        0.01: '0.01',
+                                        0.05: '0.05',
+                                        0.1: '0.1'
+                                    },
+                                    value=0.01
+                                ),
+                                NamedSlider(
+                                    id='sample-len',
+                                    min=0.1,
+                                    max=1.0,
+                                    step=0.01,
+                                    marks={
+                                        0.1: '0.1 s',
+                                        0.2: '0.2 s',
+                                        0.3: '0.3 s',
+                                        0.5: '0.5 s',
+                                        1.0: '1.0 s',
+                                    },
+                                    value=0.26
+                                ),
+                                NamedSlider(
+                                    id='embedding-neighbours',
+                                    min=5,
+                                    max=100,
+                                    step=5,
+                                    marks={
+                                        5: '5',
+                                        20: '20',
+                                        50: '50',
+                                        100: '100'
+                                    },
+                                    value=20
+                                ),
+                                html.Div(id='div-spectrogram', style={'margin-top': '20px'})
+                            ]),
+                        ]),
+                    ]
+                )
+            ]),
+            dcc.Tab(label='Table', children=[
+                html.Div(
+                    children=html.Div(
+                        className="container",
+                        style={
+                            'width': '95%',
+                            'max-width': 'none',
+                            'font-size': '1.5rem',
+                            'padding': '10px 30px'
+                        },
+                        children=[
+                            html.Div(id='features-container')
+                        ]
+                    )
+                ),
+                html.A(
+                    'Download Data',
+                    id='download-link',
+                    download="selection.csv",
+                    href="",
+                    target="_blank",
+                    style={
+                        'width': '90%',
+                        'max-width': 'none',
+                        'font-size': '1.5rem',
+                        'padding': '30px 100px'
+                    }
+                ),
+            ]),
+            dcc.Tab(label='About', children=[
+                html.Div(
+                    style={
+                        'width': '75%',
+                        'margin': '30px auto',
+                    },
+                    children=dcc.Markdown(description_md)
+                )
+            ]),
+        ])
+    ])
+
+    return div
+
+
+app.layout = generate_layout()
+
+
 if __name__ == '__main__':
-    application.run(host='0.0.0.0', debug=True, port=8080)
+    if SERVE_LOCAL:
+        app.run_server(debug=True, port=8080)
+    else:
+        application.run(host='0.0.0.0', debug=False, port=8080)
