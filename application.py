@@ -65,15 +65,14 @@ upload_style = {
 def NamedSlider(id, min, max, value, step=None, marks=None, slider_type=dcc.Slider, hidden=False):
     div = html.Div([
         html.Div(id=f'name-{id}', hidden=hidden),
-            slider_type(
-                id=id,
-                min=min,
-                max=max,
-                marks=marks,
-                step=step,
-                value=value,
-            )
-        ],
+        slider_type(
+            id=id,
+            min=min,
+            max=max,
+            marks=marks,
+            step=step,
+            value=value,
+        )],
         style={'margin': '25px 5px 30px 0px'},
         hidden=hidden,
         id=f'slidercontainer-{id}'
@@ -100,10 +99,10 @@ def generate_signed_url(key: str):
     return url
 
 
-def map_parameters(type, value):
-    if type in ['umap', 'isomap']:
+def map_parameters(embedding_type, value):
+    if embedding_type in ['umap', 'isomap']:
         return {'n_neighbors': value}
-    elif type == 'tsne':
+    elif embedding_type == 'tsne':
         return {'perplexity': value}
     return {}
 
@@ -118,7 +117,7 @@ def get_user_ip():
     return user_ip
 
 
-def resolve_filtering_expression(df: pd.DataFrame, filter: str):
+def resolve_filtering_expression(df: pd.DataFrame, filter_expression: str):
     condition = None
     ops = {
         ">": operator.gt,
@@ -126,11 +125,11 @@ def resolve_filtering_expression(df: pd.DataFrame, filter: str):
         ">=": operator.ge,
         "<=": operator.le
     }
-    match = re.search('|'.join(ops.keys()), filter)
+    match = re.search('|'.join(ops.keys()), filter_expression)
     if match:
-        operator_s = filter[match.start(): match.end()]
-        col_name = filter[:match.start()].replace('\"', '').replace(' ','')
-        filter_value = float(filter[match.end()+1:])
+        operator_s = filter_expression[match.start(): match.end()]
+        col_name = filter_expression[:match.start()].replace('\"', '').replace(' ', '')
+        filter_value = float(filter_expression[match.end() + 1:])
         condition = ops[operator_s](df[col_name], filter_value)
 
     return condition
@@ -181,8 +180,8 @@ def update_table(data, select_data, pagination_settings, sorting_settings, filte
     if select_data:
         selected_points = [point['pointIndex'] for point in select_data['points']]
         df = df.loc[selected_points]
-    for filter in filtering_expressions:
-        condition = resolve_filtering_expression(df=df, filter=filter)
+    for filter_expression in filtering_expressions:
+        condition = resolve_filtering_expression(df=df, filter_expression=filter_expression)
         if condition is not None:
             df = df.loc[condition]
 
@@ -285,7 +284,8 @@ def convert(mapping):
               State('sample-len', 'value'),
               State('features-selection', 'values'),
               State('sessionid-store', 'data')])
-def log_user_action_cb(mapping, apply_clicks, embedding_type, fftsize, bandpass, onset_threshold, sample_len, selected_features, session_id):
+def log_user_action_cb(mapping, apply_clicks, embedding_type, fftsize, bandpass, onset_threshold, sample_len,
+                       selected_features, session_id):
     if apply_clicks:
         action_type = 'Reload'
         time = datetime.now().strftime("%Y-%m-%d_%H:%M:%S")
@@ -449,7 +449,7 @@ def generate_layout():
                         dcc.Store(id='mapping-store', storage_type='memory'),
                         dcc.Store(id='userdata-store', storage_type='memory'),
                         dcc.Store(id='sessionid-store', storage_type='memory', data=session_id),
-                        html.Div(id='dummy-div', style = {'display': 'none'}),
+                        html.Div(id='dummy-div', style={'display': 'none'}),
 
                         # Body
                         html.Div(className="row", children=[
