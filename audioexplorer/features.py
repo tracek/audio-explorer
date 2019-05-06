@@ -50,7 +50,7 @@ class FeatureExtractor(object):
     def get_features(self, sample: np.ndarray) -> pd.DataFrame:
         computed_features = []
         if 'freq' in self.selected_features:
-            spectral_props = specprop.spectral_statistics_series(sample, self.fs, lowcut=400)
+            spectral_props = specprop.spectral_statistics_series(sample, self.fs)
             computed_features.append(spectral_props)
         if 'pitch' in self.selected_features:
             pitch_stats = pitchprop.get_pitch_stats_series(sample, self.fs, block_size=self.block_size, hop=self.step_size)
