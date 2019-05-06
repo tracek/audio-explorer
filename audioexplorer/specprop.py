@@ -29,7 +29,7 @@ def spectral_statistics(y: np.ndarray, fs: int, lowcut: int = 0) -> dict:
     :param lowcut: lowest frequency [Hz]
     :return: spectral features (dict)
     """
-    freq, spec = get_spectrum_profile(fs, lowcut, y)
+    freq, spec = signal.welch(y, fs=fs)
     amp = spec / spec.sum()
     mean = (freq * amp).sum()
     amp_cumsum = np.cumsum(amp)
