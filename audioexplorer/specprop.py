@@ -29,12 +29,7 @@ def spectral_statistics(y: np.ndarray, fs: int, lowcut: int = 0) -> dict:
     :param lowcut: lowest frequency [Hz]
     :return: spectral features (dict)
     """
-    spec = np.abs(np.fft.rfft(y))
-    freq = np.fft.rfftfreq(len(y), d=1 / fs)
-    idx = int(lowcut / fs * len(freq) * 2)
-    spec = np.abs(spec[idx:])
-    freq = freq[idx:]
-
+    freq, spec = get_spectrum_profile(fs, lowcut, y)
     amp = spec / spec.sum()
     mean = (freq * amp).sum()
     amp_cumsum = np.cumsum(amp)
@@ -65,6 +60,15 @@ def spectral_statistics(y: np.ndarray, fs: int, lowcut: int = 0) -> dict:
     }
     specprops.update(top_peaks_ordered_by_power)
     return specprops
+
+
+def get_spectrum_profile(fs, lowcut, y):
+    spec = np.abs(np.fft.rfft(y))
+    freq = np.fft.rfftfreq(len(y), d=1 / fs)
+    idx = int(lowcut / fs * len(freq) * 2)
+    spec = np.abs(spec[idx:])
+    freq = freq[idx:]
+    return freq, spec
 
 
 def spectral_statistics_series(y: np.ndarray, fs: int, lowcut: int = 0) -> pd.Series:
