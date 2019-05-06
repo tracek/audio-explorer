@@ -22,6 +22,7 @@ matplotlib.use('agg')
 import matplotlib.pyplot as plt
 import plotly.graph_objs as go
 from io import BytesIO
+from scipy import signal
 
 
 def test_scatter() -> go.Figure:
@@ -77,12 +78,12 @@ def make_scatterplot(x, y, customdata=None, text=None, opacity=0.8) -> go.Figure
     return fig
 
 
-def specgram_base64(signal: np.ndarray, fs, start, end) -> str:
+def specgram_base64(y: np.ndarray, fs, start, end) -> str:
     f, ax = plt.subplots()
     # xticks = np.linspace(start, end, 8).round(2)
     # ax.set_xticklabels(xticks)
 
-    plt.specgram(signal, Fs=fs, xextent=[start, end])
+    plt.specgram(y, Fs=fs, xextent=[start, end])
     plt.xlabel('Time [s]')
     plt.ylabel('Frequency [Hz]')
     plt.title('Spectrogram')
@@ -95,3 +96,40 @@ def specgram_base64(signal: np.ndarray, fs, start, end) -> str:
         base64_jpg = base64.b64encode(stream.read()).decode("utf-8")
     plt.close(f)
     return base64_jpg
+
+
+def power_spectrum(y: np.ndarray, fs: int, block_size: int=512, scaling: str='spectrum', cutoff: int=100) -> go.Figure:
+    """
+    Plot power spectrum for 1d signal in dB scale
+    :param y: signal
+    :param fs: sampling frequency
+    :param block_size: size of fft and nperseg
+    :param scaling: spectrum or density
+    :param cutoff: cut all signal below this strength
+    :return: plotly Figure
+    """
+    f, spec = signal.welch(y, fs, scaling=scaling, nperseg=block_size, nfft=block_size, noverlap=block_size // 2,
+                           detrend=False)
+    spec = 10 * np.log10(spec)
+    trace = go.Scatter(x=f, y=spec, fill='tozerox')
+
+    if cutoff:
+        yaxis_range = (-100, int(spec.max()))
+    else:
+        yaxis_range = None
+
+    layout = go.Layout(
+        title='Power Spectral Density',
+        xaxis={
+            'title': 'Frequency [Hz]',
+            'zeroline': False
+        },
+        yaxis={
+            'range': yaxis_range,
+            'title': 'Amplitude [dB]',
+            'zeroline': False
+        },
+        showlegend=False,
+    )
+    fig = go.Figure(data=[trace], layout=layout)
+    return fig

@@ -39,7 +39,7 @@ from settings import S3_BUCKET, AWS_REGION, SERVE_LOCAL
 from audioexplorer.audio_io import read_wave_local, read_wave_part_from_s3, convert_to_wav
 from audioexplorer.features import get, FEATURES
 from audioexplorer.embedding import get_embeddings, EMBEDDINGS
-from audioexplorer.visualize import make_scatterplot, specgram_base64
+from audioexplorer import visualize
 from audioexplorer import session_log
 
 
@@ -63,7 +63,8 @@ upload_style = {
     'margin': '15px auto'
 }
 
-def NamedSlider(id, min, max, value, step=None, marks=None, slider_type=dcc.Slider, hidden=False):
+
+def named_slider(id, min, max, value, step=None, marks=None, slider_type=dcc.Slider, hidden=False):
     div = html.Div([
         html.Div(id=f'name-{id}', hidden=hidden),
         slider_type(
@@ -381,7 +382,7 @@ def plot_embeddings(filename, n_clicks, embedding_type, fftsize, bandpass, onset
                 mean_freq = features['pitch_median'].astype(int).astype(str) + ' Hz'
             else:
                 mean_freq = None
-            figure = make_scatterplot(x=embeddings[:, 0], y=embeddings[:, 1],
+            figure = visualize.make_scatterplot(x=embeddings[:, 0], y=embeddings[:, 1],
                                       customdata=features[extra_data],
                                       text=mean_freq)
 
@@ -418,7 +419,7 @@ def display_click_image(click_data, url):
             fs=16000,
             start=start - 0.2,
             end=end + 0.2)
-        im = specgram_base64(signal=wav, fs=16000, start=start - 0.2, end=end + 0.2)
+        im = visualize.specgram_base64(y=wav, fs=16000, start=start - 0.2, end=end + 0.2)
 
         return html.Img(
             src='data:image/png;base64, ' + im,
@@ -429,7 +430,7 @@ def display_click_image(click_data, url):
             }
         )
 
-@app.callback(Output('download-link', 'href'),
+@app.callback(Output('spectrum-graph', 'figure'),
              [Input('graph', 'selectedData')],
              [State('filename-store', 'data')])
 def audio_profile(select_data, url):
@@ -437,6 +438,8 @@ def audio_profile(select_data, url):
         onsets = [point['customdata'] for point in select_data['points']]
         wavs = [read_wave_part_from_s3(S3_BUCKET, path=url, fs=16000, start=start, end=end) for start, end in onsets]
         wavs = np.concatenate(wavs)
+        fig = visualize.power_spectrum(wavs, fs=16000)
+        return fig
 
 
 def generate_layout():
@@ -510,14 +513,14 @@ def generate_layout():
                                     labelStyle={'display': 'inline-block', 'margin': '6px'}
                                 ),
                                 html.H4('Algorithm parameters'),
-                                NamedSlider(
+                                named_slider(
                                     id='fft-size',
                                     min=2 ** 7,
                                     max=2 ** 11,
                                     marks={i: f'{i}' for i in [2 ** i for i in range(7, 12)]},
                                     value=2 ** 9
                                 ),
-                                NamedSlider(
+                                named_slider(
                                     id='bandpass',
                                     min=0,
                                     max=8000,
@@ -533,7 +536,7 @@ def generate_layout():
                                     value=[500, 6000],
                                     slider_type=dcc.RangeSlider
                                 ),
-                                NamedSlider(
+                                named_slider(
                                     id='onset-threshold',
                                     min=0,
                                     max=0.1,
@@ -546,7 +549,7 @@ def generate_layout():
                                     },
                                     value=0.01
                                 ),
-                                NamedSlider(
+                                named_slider(
                                     id='sample-len',
                                     min=0.1,
                                     max=1.0,
@@ -560,7 +563,7 @@ def generate_layout():
                                     },
                                     value=0.26
                                 ),
-                                NamedSlider(
+                                named_slider(
                                     id='embedding-neighbours',
                                     min=5,
                                     max=100,
@@ -578,6 +581,31 @@ def generate_layout():
                         ]),
                     ]
                 )
+            ]),
+            dcc.Tab(label='Profile', children=[
+                html.Div(
+                    children=html.Div(
+                        className="container",
+                        style={
+                            'width': '95%',
+                            'max-width': 'none',
+                            'font-size': '1.5rem',
+                            'padding': '10px 30px'
+                        },
+                        children=[
+                            html.Div(className="row", children=[
+                                html.Div(className="six columns", children=[
+
+                                ]),
+                                html.Div(className="six columns", children=[
+                                    dcc.Graph(
+                                        id='spectrum-graph'
+                                    )
+                                ])
+                            ]),
+                        ]
+                    )
+                ),
             ]),
             dcc.Tab(label='Table', children=[
                 html.Div(
