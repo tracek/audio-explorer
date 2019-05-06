@@ -25,23 +25,6 @@ from io import BytesIO
 from scipy import signal
 
 
-def test_scatter() -> go.Figure:
-    N = 100
-    random_x = np.random.randn(N)
-    random_y = np.random.randn(N)
-
-    # Create a trace
-    trace = go.Scatter(
-        x=random_x,
-        y=random_y,
-        mode='markers'
-    )
-
-    # Plot and embed in ipython notebook!
-    fig = go.Figure(data=[trace])
-    return fig
-
-
 def make_scatterplot(x, y, customdata=None, text=None, opacity=0.8) -> go.Figure:
 
     trace0 = go.Scatter(
