@@ -25,7 +25,7 @@ from io import BytesIO
 from scipy import signal
 
 
-def make_scatterplot(x, y, customdata=None, text=None, opacity=0.8) -> go.Figure:
+def scatter_plot(x, y, customdata=None, text=None, opacity=0.8) -> go.Figure:
 
     trace0 = go.Scatter(
         x=x,
@@ -61,7 +61,7 @@ def make_scatterplot(x, y, customdata=None, text=None, opacity=0.8) -> go.Figure
     return fig
 
 
-def specgram_base64(y: np.ndarray, fs, start, end) -> str:
+def specgram_base64(y: np.ndarray, fs: int, start: float, end: float, margin: float=0.2) -> str:
     f, ax = plt.subplots()
     # xticks = np.linspace(start, end, 8).round(2)
     # ax.set_xticklabels(xticks)
@@ -70,8 +70,8 @@ def specgram_base64(y: np.ndarray, fs, start, end) -> str:
     plt.xlabel('Time [s]')
     plt.ylabel('Frequency [Hz]')
     plt.title('Spectrogram')
-    ax.axvline(x=start + 0.2, color='red', alpha=0.3)
-    ax.axvline(x=end - 0.2, color='red', alpha=0.3)
+    ax.axvline(x=start + margin, color='red', alpha=0.3)
+    ax.axvline(x=end - margin, color='red', alpha=0.3)
 
     with BytesIO() as stream:
         plt.savefig(stream, format='png')

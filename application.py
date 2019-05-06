@@ -382,9 +382,9 @@ def plot_embeddings(filename, n_clicks, embedding_type, fftsize, bandpass, onset
                 mean_freq = features['pitch_median'].astype(int).astype(str) + ' Hz'
             else:
                 mean_freq = None
-            figure = visualize.make_scatterplot(x=embeddings[:, 0], y=embeddings[:, 1],
-                                      customdata=features[extra_data],
-                                      text=mean_freq)
+            figure = visualize.scatter_plot(x=embeddings[:, 0], y=embeddings[:, 1],
+                                            customdata=features[extra_data],
+                                            text=mean_freq)
 
             return figure, features.round(2).to_dict(orient='rows'), warning_msg
         except Exception as ex:
