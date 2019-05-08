@@ -81,7 +81,7 @@ def specgram_base64(y: np.ndarray, fs: int, start: float, end: float, margin: fl
     return base64_jpg
 
 
-def power_spectrum(y: np.ndarray, fs: int, block_size: int=512, scaling: str='spectrum', cutoff: int=100) -> go.Figure:
+def power_spectrum(y: np.ndarray, fs: int, block_size: int=512, scaling: str='spectrum', cutoff: int=-100) -> go.Figure:
     """
     Plot power spectrum for 1d signal in dB scale
     :param y: signal
@@ -97,7 +97,9 @@ def power_spectrum(y: np.ndarray, fs: int, block_size: int=512, scaling: str='sp
     trace = go.Scatter(x=f, y=spec, fill='tozerox')
 
     if cutoff:
-        yaxis_range = (-100, int(spec.max()))
+        ymin = max(cutoff, spec.min())
+        ymax = int(spec.max())
+        yaxis_range = (ymin, ymax)
     else:
         yaxis_range = None
 

@@ -172,7 +172,7 @@ def show_features_in_table(data):
 @app.callback(
     Output('features-table', "data"),
     [Input('feature-store', 'data'),
-     Input('graph', 'selectedData'),
+     Input('embedding-graph', 'selectedData'),
      Input('features-table', "pagination_settings"),
      Input('features-table', "sorting_settings"),
      Input('features-table', "filtering_settings")])
@@ -204,7 +204,7 @@ def update_table(data, select_data, pagination_settings, sorting_settings, filte
 
 
 @app.callback(Output('download-link', 'href'),
-              [Input('graph', 'selectedData'),
+              [Input('embedding-graph', 'selectedData'),
                Input('feature-store', 'data')])
 def update_download_link(select_data, data):
     df = pd.DataFrame(data)
@@ -345,7 +345,7 @@ def upload_to_s3(filename):
         raise PreventUpdate
 
 
-@app.callback([Output('graph', 'figure'),
+@app.callback([Output('embedding-graph', 'figure'),
                Output('feature-store', 'data'),
                Output('error-report', 'children')],
               [Input('filename-store', 'data'),
@@ -394,7 +394,7 @@ def plot_embeddings(filename, n_clicks, embedding_type, fftsize, bandpass, onset
 
 
 @app.callback(Output('audio-player', 'overrideProps'),
-              [Input('graph', 'clickData')],
+              [Input('embedding-graph', 'clickData')],
               [State('signed-url-store', 'data')])
 def update_player_status(click_data, url):
     if click_data:
@@ -408,7 +408,7 @@ def update_player_status(click_data, url):
 
 
 @app.callback(Output('div-spectrogram', 'children'),
-              [Input('graph', 'clickData')],
+              [Input('embedding-graph', 'clickData')],
               [State('filename-store', 'data')])
 def display_click_image(click_data, url):
     if click_data is not None:
@@ -431,15 +431,17 @@ def display_click_image(click_data, url):
         )
 
 @app.callback(Output('spectrum-graph', 'figure'),
-             [Input('graph', 'selectedData')],
+             [Input('embedding-graph', 'selectedData')],
              [State('filename-store', 'data')])
 def audio_profile(select_data, url):
-    if select_data:
+    if select_data and url:
         onsets = [point['customdata'] for point in select_data['points']]
         wavs = [read_wave_part_from_s3(S3_BUCKET, path=url, fs=16000, start=start, end=end) for start, end in onsets]
         wavs = np.concatenate(wavs)
         fig = visualize.power_spectrum(wavs, fs=16000)
         return fig
+    else:
+        raise PreventUpdate
 
 
 def generate_layout():
@@ -469,7 +471,7 @@ def generate_layout():
                             html.Div(className="eight columns", children=[
                                 html.Div(id='error-report', style={'color': 'red'}),
                                 dcc.Graph(
-                                    id='graph',
+                                    id='embedding-graph',
                                     style={'height': '90vh'}
                                 ),
                                 dash_audio_components.DashAudioComponents(
@@ -595,7 +597,9 @@ def generate_layout():
                         children=[
                             html.Div(className="row", children=[
                                 html.Div(className="six columns", children=[
-
+                                    dcc.Graph(
+                                        id='embedding-graph-2'
+                                    )
                                 ]),
                                 html.Div(className="six columns", children=[
                                     dcc.Graph(
