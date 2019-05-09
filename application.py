@@ -567,12 +567,12 @@ def generate_layout():
                                     step=0.01,
                                     marks={
                                         0.1: '0.1 s',
-                                        AUDIO_MARGIN: 'AUDIO_MARGIN s',
+                                        0.2: '0.2 s',
                                         0.3: '0.3 s',
                                         0.5: '0.5 s',
                                         1.0: '1.0 s',
                                     },
-                                    value=AUDIO_MARGIN6
+                                    value=0.26
                                 ),
                                 named_slider(
                                     id='embedding-neighbours',
