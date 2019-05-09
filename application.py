@@ -35,7 +35,7 @@ from dash.dependencies import Input, Output, State
 from dash.exceptions import PreventUpdate
 from botocore.client import Config
 
-from settings import S3_BUCKET, AWS_REGION, SERVE_LOCAL
+from settings import S3_BUCKET, AWS_REGION, SERVE_LOCAL, SAMPLING_RATE, AUDIO_MARGIN
 from audioexplorer.audio_io import read_wave_local, read_wave_part_from_s3, convert_to_wav
 from audioexplorer.features import get, FEATURES
 from audioexplorer.embedding import get_embeddings, EMBEDDINGS
@@ -402,8 +402,8 @@ def update_player_status(click_data, url):
         start, end = click_data['points'][0]['customdata']
         return {'autoPlay': True,
                 'src': url,
-                'from_position': start - 0.2,
-                'to_position': end + 0.2}
+                'from_position': start - AUDIO_MARGIN,
+                'to_position': end + AUDIO_MARGIN}
     else:
         raise PreventUpdate
 
@@ -417,10 +417,10 @@ def display_click_image(click_data, url):
         wav = read_wave_part_from_s3(
             bucket=S3_BUCKET,
             path=url,
-            fs=16000,
-            start=start - 0.2,
-            end=end + 0.2)
-        im = visualize.specgram_base64(y=wav, fs=16000, start=start - 0.2, end=end + 0.2)
+            fs=SAMPLING_RATE,
+            start=start - AUDIO_MARGIN,
+            end=end + AUDIO_MARGIN)
+        im = visualize.specgram_base64(y=wav, fs=SAMPLING_RATE, start=start - AUDIO_MARGIN, end=end + AUDIO_MARGIN)
 
         return html.Img(
             src='data:image/png;base64, ' + im,
@@ -441,13 +441,13 @@ def audio_profile(select_data, url, n_clicks, bandpass):
     if url:
         if select_data:
             onsets = [point['customdata'] for point in select_data['points']]
-            wavs = [read_wave_part_from_s3(S3_BUCKET, path=url, fs=16000, start=start, end=end) for start, end in onsets]
+            wavs = [read_wave_part_from_s3(S3_BUCKET, path=url, fs=SAMPLING_RATE, start=start, end=end) for start, end in onsets]
             wavs = np.concatenate(wavs)
         else: # None selected
             fs, wavs = read_wave_local('uploads/' + url)
         lowcut, higcut = bandpass
-        wavs = filters.frequency_filter(wavs, fs=16000, lowcut=lowcut, highcut=higcut)
-        fig = visualize.power_spectrum(wavs, fs=16000)
+        wavs = filters.frequency_filter(wavs, fs=SAMPLING_RATE, lowcut=lowcut, highcut=higcut)
+        fig = visualize.power_spectrum(wavs, fs=SAMPLING_RATE)
         return fig
     else:
         raise PreventUpdate
@@ -567,12 +567,12 @@ def generate_layout():
                                     step=0.01,
                                     marks={
                                         0.1: '0.1 s',
-                                        0.2: '0.2 s',
+                                        AUDIO_MARGIN: 'AUDIO_MARGIN s',
                                         0.3: '0.3 s',
                                         0.5: '0.5 s',
                                         1.0: '1.0 s',
                                     },
-                                    value=0.26
+                                    value=AUDIO_MARGIN6
                                 ),
                                 named_slider(
                                     id='embedding-neighbours',

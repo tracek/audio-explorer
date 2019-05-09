@@ -16,3 +16,9 @@ S3_STREAMED = f'https://s3.eu-central-1.amazonaws.com/{S3_BUCKET}/'
 AWS_REGION = 'eu-central-1'
 
 SERVE_LOCAL = os.getenv('LOCAL', False)
+
+# All audio will be resampled to this frequency
+SAMPLING_RATE = 16000
+
+# Margin applied to start and end of the audio to make it longer and improve UX. Not applied to any calculations.
+AUDIO_MARGIN = 0.2
