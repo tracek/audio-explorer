@@ -43,6 +43,8 @@ from audioexplorer import visualize
 from audioexplorer import session_log
 from audioexplorer import filters
 
+import pickle
+
 
 app = dash.Dash(__name__, external_stylesheets=['https://codepen.io/chriddyp/pen/bWLwgP.css',
                                                 "https://codepen.io/chriddyp/pen/brPBPO.css"])
@@ -453,6 +455,46 @@ def audio_profile(select_data, url, n_clicks, bandpass):
         raise PreventUpdate
 
 
+# @app.callback(Output('waveform-graph', 'figure'),
+#              [Input('embedding-graph', 'selectedData'),
+#               Input('filename-store', 'data'),
+#               Input('apply-button', 'n_clicks')],
+#              [State('bandpass', 'value')])
+# def audio_profile(select_data, url, n_clicks, bandpass):
+#     lowcut, higcut = bandpass
+#     fs, wavs = read_wave_local('uploads/' + url)
+#     wavs = filters.frequency_filter(wavs, fs=SAMPLING_RATE, lowcut=lowcut, highcut=higcut)
+#     fig = visualize.waveform_shaded(wavs, fs=fs)
+#     with open('temp.p', 'wb') as f:
+#         pickle.dump(fig, f)
+#     return fig
+
+
+@app.callback(Output('waveform-graph', 'figure'),
+             [Input('embedding-graph', 'selectedData'),
+              Input('filename-store', 'data'),
+              Input('waveform-graph', 'relayoutData'),
+              Input('apply-button', 'n_clicks')],
+             [State('bandpass', 'value')])
+def audio_profile(select_data, url, selection, n_clicks, bandpass):
+    lowcut, higcut = bandpass
+
+
+    if selection is not None and 'xaxis.range[0]' in selection and 'xaxis.range[1]' in selection:
+        start = selection['xaxis.range[0]']
+        end = selection['xaxis.range[1]']
+        y = read_wave_part_from_s3(S3_BUCKET, path=url, fs=SAMPLING_RATE, start=start, end=end)
+        y = y / y.max()
+    else:
+        fs, y = read_wave_local('uploads/' + url)
+        start = 0
+        end = len(y) / fs
+
+    y = filters.frequency_filter(y, fs=SAMPLING_RATE, lowcut=lowcut, highcut=higcut)
+    fig = visualize.waveform_shaded(y, fs=SAMPLING_RATE, start=start, end=end)
+    return fig
+
+
 def generate_layout():
     session_id = str(uuid.uuid4())
     div = html.Div([
@@ -604,6 +646,9 @@ def generate_layout():
                             'padding': '10px 30px'
                         },
                         children=[
+                            dcc.Graph(
+                                id='waveform-graph'
+                            ),
                             html.Div(className="row", children=[
                                 html.Div(className="six columns", children=[
                                     dcc.Graph(

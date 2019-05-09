@@ -22,6 +22,7 @@ import librosa
 import sox
 import logging
 
+
 def is_conversion_required(filepath):
     sample_rate_16khz = int(sox.file_info.sample_rate(filepath)) == 16000
     mono = sox.file_info.channels(filepath) == 1
@@ -45,6 +46,7 @@ def convert_to_wav(input_path, output_path):
 
 
 def read_wave_local(path: str) -> (int, np.ndarray):
+    # fs, signal = wavfile.read(path)
     signal, fs = librosa.load(path=path, sr=16000, mono=True)
     return fs, signal
 

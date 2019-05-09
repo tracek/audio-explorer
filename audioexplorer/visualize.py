@@ -19,9 +19,13 @@ import base64
 import numpy as np
 import matplotlib
 matplotlib.use('agg')
+import pandas as pd
 import matplotlib.pyplot as plt
 import plotly.graph_objs as go
+import datashader as ds
+import datashader.transfer_functions as tf
 from io import BytesIO
+from collections import OrderedDict
 from scipy import signal
 
 
@@ -117,4 +121,77 @@ def power_spectrum(y: np.ndarray, fs: int, block_size: int=512, scaling: str='sp
         showlegend=False,
     )
     fig = go.Figure(data=[trace], layout=layout)
+    return fig
+
+
+def waveform(y: np.ndarray, fs: int):
+    t = np.linspace(0, len(y) / fs, num=len(y))
+    trace = go.Scattergl(x=t, y=y)
+
+    layout = go.Layout(
+        title='Waveform',
+        xaxis={
+            'title': 'Time [s]',
+            'zeroline': False
+        },
+        yaxis={
+            'title': 'Amplitude',
+            'zeroline': False
+        },
+        showlegend=False,
+    )
+    fig = go.Figure(data=[trace], layout=layout)
+    return fig
+
+
+def waveform_shaded(signal: np.ndarray, fs: int, start=0, end=None):
+    if end is None:
+        end = len(signal) / fs
+    ymargin_factor = 1.1
+    x_range = [start, end]
+    y_range = [ymargin_factor * signal.min(), ymargin_factor * signal.max()]
+    t = np.linspace(start, end, num=len(signal))
+    df = pd.DataFrame(data={'Time': t, 'Signal': signal})
+    cvs = ds.Canvas(x_range=x_range, y_range=y_range, plot_width=1500)
+
+    cols = ['Signal']
+    aggs = OrderedDict((c, cvs.line(df, 'Time', c)) for c in cols)
+    img = tf.shade(aggs['Signal'])
+    arr = np.array(img)
+    z = arr.tolist()
+    dims = len(z[0]), len(z)
+
+    x = np.linspace(x_range[0], x_range[1], dims[0])
+    y = np.linspace(y_range[0], y_range[1], dims[0])
+
+    fig = {
+        'data': [{
+            'x': x,
+            'y': y,
+            'z': z,
+            'type': 'heatmap',
+            'showscale': False,
+            'colorscale': [[0, 'rgba(255, 255, 255,0)'], [1, '#75baf2']]
+            }],
+        'layout': {
+            'margin': {'t': 50, 'b': 20},
+            'height': 250,
+            'xaxis': {
+                'title': 'Time [s]',
+                'showline': True,
+                'zeroline': False,
+                'showgrid': False,
+                'showticklabels': True
+            },
+            'yaxis': {
+                'title': 'Amplitude',
+                'fixedrange': True,
+                'showline': False,
+                'zeroline': False,
+                'showgrid': False,
+                'showticklabels': False,
+                'ticks': ''
+            },
+        }
+    }
     return fig
