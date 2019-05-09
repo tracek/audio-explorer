@@ -98,7 +98,7 @@ def power_spectrum(y: np.ndarray, fs: int, block_size: int=512, scaling: str='sp
 
     if cutoff:
         ymin = max(cutoff, spec.min())
-        ymax = int(spec.max())
+        ymax = int(spec.max()) + 5
         yaxis_range = (ymin, ymax)
     else:
         yaxis_range = None
