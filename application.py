@@ -497,7 +497,7 @@ def generate_layout():
                                         id='upload-data',
                                         maxFiles=1,
                                         simultaneousUploads=1,
-                                        maxFileSize=10 * 1024 * 1024 * 500,  # 500 MB
+                                        maxFileSize=5 * 1024 * 1024 * 500,  # 500 MB
                                         service="/upload_resumable",
                                         textLabel="UPLOAD AUDIO",
                                         startButton=False,
