@@ -41,6 +41,7 @@ from audioexplorer.features import get, FEATURES
 from audioexplorer.embedding import get_embeddings, EMBEDDINGS
 from audioexplorer import visualize
 from audioexplorer import session_log
+from audioexplorer import filters
 
 
 app = dash.Dash(__name__, external_stylesheets=['https://codepen.io/chriddyp/pen/bWLwgP.css',
@@ -430,14 +431,22 @@ def display_click_image(click_data, url):
             }
         )
 
+
 @app.callback(Output('spectrum-graph', 'figure'),
-             [Input('embedding-graph', 'selectedData')],
-             [State('filename-store', 'data')])
-def audio_profile(select_data, url):
-    if select_data and url:
-        onsets = [point['customdata'] for point in select_data['points']]
-        wavs = [read_wave_part_from_s3(S3_BUCKET, path=url, fs=16000, start=start, end=end) for start, end in onsets]
-        wavs = np.concatenate(wavs)
+             [Input('embedding-graph', 'selectedData'),
+              Input('filename-store', 'data'),
+              Input('apply-button', 'n_clicks')],
+             [State('bandpass', 'value')])
+def audio_profile(select_data, url, n_clicks, bandpass):
+    if url:
+        if select_data:
+            onsets = [point['customdata'] for point in select_data['points']]
+            wavs = [read_wave_part_from_s3(S3_BUCKET, path=url, fs=16000, start=start, end=end) for start, end in onsets]
+            wavs = np.concatenate(wavs)
+        else: # None selected
+            fs, wavs = read_wave_local('uploads/' + url)
+        lowcut, higcut = bandpass
+        wavs = filters.frequency_filter(wavs, fs=16000, lowcut=lowcut, highcut=higcut)
         fig = visualize.power_spectrum(wavs, fs=16000)
         return fig
     else:

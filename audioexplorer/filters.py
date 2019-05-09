@@ -49,7 +49,7 @@ def frequency_filter(signal: np.ndarray, fs: int, lowcut: Optional[int], highcut
     :param lowcut: cut everything below this frequency [Hz]
     :param highcut: cut everything above this frequency [Hz]
     :param order: order of the Butterworth filter
-    :return:
+    :return: flitered signal (ndarray float32)
     """
     if lowcut and highcut:
         b, a = _butter_bandpass(lowcut, highcut, fs, order)
