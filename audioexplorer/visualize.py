@@ -22,11 +22,14 @@ matplotlib.use('agg')
 import pandas as pd
 import matplotlib.pyplot as plt
 import plotly.graph_objs as go
+import xarray as xr
 import datashader as ds
 import datashader.transfer_functions as tf
 from io import BytesIO
 from collections import OrderedDict
 from scipy import signal
+from numpy.lib.stride_tricks import as_strided
+from audioexplorer import yaafe_wrapper
 
 
 def scatter_plot(x, y, customdata=None, text=None, opacity=0.8) -> go.Figure:
@@ -144,6 +147,17 @@ def waveform(y: np.ndarray, fs: int):
     return fig
 
 
+def waveform_downsampled(y: np.ndarray, fs: int, max_points=5e4, max_fs=1000):
+    target_fs = fs
+    if max_points < y.shape[-1]:
+        target_fs = min(max_fs, (fs * y.shape[-1]) // max_points)
+    hop = fs // target_fs
+
+    n_frames = 1 + int((len(y) - hop) / hop)
+    y = as_strided(y, shape=(hop, n_frames), strides=(y.itemsize, hop * y.itemsize)).max()
+    return y
+
+
 def waveform_shaded(signal: np.ndarray, fs: int, start=0, end=None):
     if end is None:
         end = len(signal) / fs
@@ -157,6 +171,149 @@ def waveform_shaded(signal: np.ndarray, fs: int, start=0, end=None):
     cols = ['Signal']
     aggs = OrderedDict((c, cvs.line(df, 'Time', c)) for c in cols)
     img = tf.shade(aggs['Signal'])
+    arr = np.array(img)
+    z = arr.tolist()
+    dims = len(z[0]), len(z)
+
+    x = np.linspace(x_range[0], x_range[1], dims[0])
+    y = np.linspace(y_range[0], y_range[1], dims[0])
+
+    fig = {
+        'data': [{
+            'x': x,
+            'y': y,
+            'z': z,
+            'type': 'heatmap',
+            'showscale': False,
+            'colorscale': [[0, 'rgba(255, 255, 255,0)'], [1, '#75baf2']]
+            }],
+        'layout': {
+            'height': 350,
+            'xaxis': {
+                'title': 'Time [s]',
+                'showline': True,
+                'zeroline': False,
+                'showgrid': False,
+                'showticklabels': True
+            },
+            'yaxis': {
+                'title': 'Amplitude',
+                'fixedrange': True,
+                'showline': False,
+                'zeroline': False,
+                'showgrid': False,
+                'showticklabels': False,
+                'ticks': ''
+            },
+        }
+    }
+    return fig
+
+
+def calculate_spectrogram(y, fs, block_size=1024, backend='yaafe'):
+    if backend == 'yaafe':
+        freq, time, Sxx = yaafe_wrapper.calculate_spectrogram(y, fs, block_size=block_size)
+    elif backend == 'scipy':
+        freq, time, Sxx = signal.spectrogram(y, fs=fs, nperseg=block_size, noverlap=None)
+        Sxx = Sxx.T # transpose to get the same shape as yaafe, i.e. [time, freq]
+    else:
+        raise NotImplemented(f'Backend {backend} not implemented')
+    return freq, time, Sxx
+
+
+def time_to_sample(time, fs):
+    return int(time * fs)
+
+
+def spectrogram_shaded(S, time, fs: int, start_time=0, end_time=None):
+    """
+
+    :param S: spectogram 2d array
+    :param fs:
+    :param start_time:
+    :param end_time:
+    :param block_size:
+    :param step_size:
+    :return:
+    """
+
+    condition = (time > start_time) & ( time < end_time)
+    S = S[condition]
+    freq = np.linspace(0, fs // 2, num=S.shape[-1])
+    xrdata = xr.DataArray(S, coords={'time': time, 'freq': freq}, dims=('time', 'freq'))
+
+    x_range = [time[0], time[-1]]
+    y_range = [0, freq[-1]]
+    cvs = ds.Canvas(plot_width=1500, plot_height=200, x_range=x_range, y_range=y_range)
+
+    raster = cvs.raster(xrdata.T)
+    img = tf.shade(raster)
+    arr = np.array(img)
+
+    z = arr.tolist()
+    x = np.linspace(x_range[0], x_range[1], len(z[0]))
+    y = np.linspace(y_range[0], y_range[1], len(z[0]))
+
+    fig = {
+        'data': [{
+            'x': x,
+            'y': y,
+            'z': z,
+            'type': 'heatmap',
+            'showscale': False,
+            'colorscale': [[0, '#75baf2'], [1, 'rgba(255, 255, 255,0)']]
+            }],
+        'layout': {
+            'height': 350,
+            'xaxis': {
+                'title': 'Time [s]',
+                'showline': True,
+                'zeroline': False,
+                'showgrid': False,
+                'showticklabels': True
+            },
+            'yaxis': {
+                'title': 'Amplitude',
+                'fixedrange': True,
+                'showline': False,
+                'zeroline': False,
+                'showgrid': False,
+                'showticklabels': False,
+                'ticks': ''
+            },
+        }
+    }
+    return fig
+
+
+def spectrogram_shaded2(df: pd.DataFrame, fs: int, start_time=0, end_time=None, block_size=1024, step_size=None):
+    """
+
+    :param df: dataframe with time, freq and Sxx
+    :param fs:
+    :param start_time:
+    :param end_time:
+    :param block_size:
+    :param step_size:
+    :return:
+    """
+
+    if end_time is None:
+        end_time = len(y) / fs
+    if step_size is None:
+        step_size = block_size // 2
+    start_sample = time_to_sample(start_time, fs)
+    end_sample = time_to_sample(end_time, fs)
+    y = y[start_sample:end_sample]
+    freq, time, Sxx = calculate_spectrogram(y, fs, block_size=block_size)
+    xrdata = xr.DataArray(Sxx, coords={'time': time, 'freq': freq}, dims=('time', 'freq'))
+
+    x_range = [0, time[-1]]
+    y_range = [0, freq[-1]]
+    cvs = ds.Canvas(plot_width=1500, plot_height=200, x_range=x_range, y_range=y_range)
+
+    raster = cvs.raster(xrdata.T)
+    img = tf.shade(raster)
     arr = np.array(img)
     z = arr.tolist()
     dims = len(z[0]), len(z)

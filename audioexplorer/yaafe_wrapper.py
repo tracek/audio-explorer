@@ -86,5 +86,19 @@ class YaafeWrapper(object):
         return pd.Series(flat_dict)
 
 
+def calculate_spectrogram(y, fs, block_size=1024, step_size=None):
+    if step_size is None:
+        step_size = block_size // 2
+    feature_plan = yaafelib.FeaturePlan(sample_rate=fs, normalize=True)
+    feature_plan.addFeature(f'MagnitudeSpectrum: MagnitudeSpectrum blockSize={block_size} stepSize={step_size}')
+    data_flow = feature_plan.getDataFlow()
+    engine = yaafelib.Engine()
+    engine.load(data_flow)
+    features = engine.processAudio(y.reshape(1, -1).astype('float64'))
 
+    noverlap = block_size // 2
+    spectrum = features['MagnitudeSpectrum']
+    time=np.linspace(noverlap / fs, (len(y) - noverlap) / fs, spectrum.shape[0])
+    freq = np.linspace(0, fs // 2, num=spectrum.shape[-1])
 
+    return freq, time, spectrum

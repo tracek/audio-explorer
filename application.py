@@ -455,19 +455,39 @@ def audio_profile(select_data, url, n_clicks, bandpass):
         raise PreventUpdate
 
 
-# @app.callback(Output('waveform-graph', 'figure'),
-#              [Input('embedding-graph', 'selectedData'),
-#               Input('filename-store', 'data'),
-#               Input('apply-button', 'n_clicks')],
-#              [State('bandpass', 'value')])
-# def audio_profile(select_data, url, n_clicks, bandpass):
-#     lowcut, higcut = bandpass
-#     fs, wavs = read_wave_local('uploads/' + url)
-#     wavs = filters.frequency_filter(wavs, fs=SAMPLING_RATE, lowcut=lowcut, highcut=higcut)
-#     fig = visualize.waveform_shaded(wavs, fs=fs)
-#     with open('temp.p', 'wb') as f:
-#         pickle.dump(fig, f)
-#     return fig
+@app.callback(Output('spectrogram-full-graph', 'figure'),
+             [Input('embedding-graph', 'selectedData'),
+              Input('filename-store', 'data'),
+              Input('spectrogram-full-graph', 'relayoutData'),
+              Input('apply-button', 'n_clicks')],
+             [State('bandpass', 'value')])
+def full_spectrogram_graph(select_data, url, selection, n_clicks, bandpass):
+    if url is not None:
+        temp_path = f'/tmp/{os.path.splitext(url)[0]}'
+        spectrum_path = temp_path + '_spectrum.npy'
+        time_path = temp_path + '_time.npy'
+        if selection is not None:
+            if 'xaxis.range[0]' in selection and 'xaxis.range[1]' in selection:
+                start = selection['xaxis.range[0]']
+                end = selection['xaxis.range[1]']
+                Sxx = np.load(spectrum_path)
+                time = np.load(time_path)
+            else:
+                raise PreventUpdate
+        else:
+            fs, y = read_wave_local('uploads/' + url)
+            lowcut, higcut = bandpass
+            y = filters.frequency_filter(y, fs=SAMPLING_RATE, lowcut=lowcut, highcut=higcut)
+            freq, time, Sxx = visualize.calculate_spectrogram(y, fs)
+            np.save(spectrum_path, Sxx)
+            np.save(time_path, time)
+            start = 0
+            end = len(y) / SAMPLING_RATE
+
+        fig = visualize.spectrogram_shaded(S=Sxx, time=time, fs=SAMPLING_RATE, start_time=start, end_time=end)
+        return fig
+    else:
+        raise PreventUpdate
 
 
 @app.callback(Output('waveform-graph', 'figure'),
@@ -476,15 +496,16 @@ def audio_profile(select_data, url, n_clicks, bandpass):
               Input('waveform-graph', 'relayoutData'),
               Input('apply-button', 'n_clicks')],
              [State('bandpass', 'value')])
-def audio_profile(select_data, url, selection, n_clicks, bandpass):
+def waveform_graph(select_data, url, selection, n_clicks, bandpass):
     lowcut, higcut = bandpass
-
-
-    if selection is not None and 'xaxis.range[0]' in selection and 'xaxis.range[1]' in selection:
-        start = selection['xaxis.range[0]']
-        end = selection['xaxis.range[1]']
-        y = read_wave_part_from_s3(S3_BUCKET, path=url, fs=SAMPLING_RATE, start=start, end=end)
-        y = y / y.max()
+    if selection is not None:
+        if 'xaxis.range[0]' in selection and 'xaxis.range[1]' in selection:
+            start = selection['xaxis.range[0]']
+            end = selection['xaxis.range[1]']
+            y = read_wave_part_from_s3(S3_BUCKET, path=url, fs=SAMPLING_RATE, start=start, end=end)
+            y = y / y.max()
+        else:
+            raise PreventUpdate
     else:
         fs, y = read_wave_local('uploads/' + url)
         start = 0
@@ -493,6 +514,7 @@ def audio_profile(select_data, url, selection, n_clicks, bandpass):
     y = filters.frequency_filter(y, fs=SAMPLING_RATE, lowcut=lowcut, highcut=higcut)
     fig = visualize.waveform_shaded(y, fs=SAMPLING_RATE, start=start, end=end)
     return fig
+
 
 
 def generate_layout():
@@ -556,7 +578,7 @@ def generate_layout():
                                     id='algorithm-dropdown',
                                     options=[{'label': label, 'value': value} for value, label in EMBEDDINGS.items()],
                                     placeholder='Select embedding',
-                                    value='umap'
+                                    value='pca'
                                 ),
                                 html.H4('Select features'),
                                 dcc.Checklist(
@@ -648,6 +670,9 @@ def generate_layout():
                         children=[
                             dcc.Graph(
                                 id='waveform-graph'
+                            ),
+                            dcc.Graph(
+                                id='spectrogram-full-graph'
                             ),
                             html.Div(className="row", children=[
                                 html.Div(className="six columns", children=[
