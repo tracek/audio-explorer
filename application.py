@@ -604,7 +604,7 @@ def generate_layout():
                                     id='algorithm-dropdown',
                                     options=[{'label': label, 'value': value} for value, label in EMBEDDINGS.items()],
                                     placeholder='Select embedding',
-                                    value='pca'
+                                    value='umap'
                                 ),
                                 html.H4('Select features'),
                                 dcc.Checklist(
