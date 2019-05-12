@@ -472,6 +472,12 @@ def full_spectrogram_graph(select_data, url, selection, n_clicks, bandpass):
                 end = selection['xaxis.range[1]']
                 Sxx = np.load(spectrum_path)
                 time = np.load(time_path)
+            elif 'xaxis.autorange' in selection:
+                # Handle reset axes evenyt
+                Sxx = np.load(spectrum_path)
+                time = np.load(time_path)
+                start = 0
+                end = time[-1]
             else:
                 raise PreventUpdate
         else:

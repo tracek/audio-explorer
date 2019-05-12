@@ -239,6 +239,7 @@ def spectrogram_shaded(S, time, fs: int, start_time=0, end_time=None):
 
     condition = (time > start_time) & ( time < end_time)
     S = S[condition]
+    time = time[condition]
     freq = np.linspace(0, fs // 2, num=S.shape[-1])
     xrdata = xr.DataArray(S, coords={'time': time, 'freq': freq}, dims=('time', 'freq'))
 
@@ -252,7 +253,7 @@ def spectrogram_shaded(S, time, fs: int, start_time=0, end_time=None):
 
     z = arr.tolist()
     x = np.linspace(x_range[0], x_range[1], len(z[0]))
-    y = np.linspace(y_range[0], y_range[1], len(z[0]))
+    y = np.linspace(y_range[0], y_range[1], len(z))
 
     fig = {
         'data': [{
@@ -265,74 +266,6 @@ def spectrogram_shaded(S, time, fs: int, start_time=0, end_time=None):
             }],
         'layout': {
             'height': 350,
-            'xaxis': {
-                'title': 'Time [s]',
-                'showline': True,
-                'zeroline': False,
-                'showgrid': False,
-                'showticklabels': True
-            },
-            'yaxis': {
-                'title': 'Amplitude',
-                'fixedrange': True,
-                'showline': False,
-                'zeroline': False,
-                'showgrid': False,
-                'showticklabels': False,
-                'ticks': ''
-            },
-        }
-    }
-    return fig
-
-
-def spectrogram_shaded2(df: pd.DataFrame, fs: int, start_time=0, end_time=None, block_size=1024, step_size=None):
-    """
-
-    :param df: dataframe with time, freq and Sxx
-    :param fs:
-    :param start_time:
-    :param end_time:
-    :param block_size:
-    :param step_size:
-    :return:
-    """
-
-    if end_time is None:
-        end_time = len(y) / fs
-    if step_size is None:
-        step_size = block_size // 2
-    start_sample = time_to_sample(start_time, fs)
-    end_sample = time_to_sample(end_time, fs)
-    y = y[start_sample:end_sample]
-    freq, time, Sxx = calculate_spectrogram(y, fs, block_size=block_size)
-    xrdata = xr.DataArray(Sxx, coords={'time': time, 'freq': freq}, dims=('time', 'freq'))
-
-    x_range = [0, time[-1]]
-    y_range = [0, freq[-1]]
-    cvs = ds.Canvas(plot_width=1500, plot_height=200, x_range=x_range, y_range=y_range)
-
-    raster = cvs.raster(xrdata.T)
-    img = tf.shade(raster)
-    arr = np.array(img)
-    z = arr.tolist()
-    dims = len(z[0]), len(z)
-
-    x = np.linspace(x_range[0], x_range[1], dims[0])
-    y = np.linspace(y_range[0], y_range[1], dims[0])
-
-    fig = {
-        'data': [{
-            'x': x,
-            'y': y,
-            'z': z,
-            'type': 'heatmap',
-            'showscale': False,
-            'colorscale': [[0, 'rgba(255, 255, 255,0)'], [1, '#75baf2']]
-            }],
-        'layout': {
-            'margin': {'t': 50, 'b': 20},
-            'height': 250,
             'xaxis': {
                 'title': 'Time [s]',
                 'showline': True,
