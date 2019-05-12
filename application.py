@@ -43,9 +43,6 @@ from audioexplorer import visualize
 from audioexplorer import session_log
 from audioexplorer import filters
 
-import pickle
-
-
 app = dash.Dash(__name__, external_stylesheets=['https://codepen.io/chriddyp/pen/bWLwgP.css',
                                                 "https://codepen.io/chriddyp/pen/brPBPO.css"])
 app.config['suppress_callback_exceptions']=True
@@ -514,6 +511,11 @@ def full_spectrogram_graph(select_data, url, selection, n_clicks, bandpass):
     else:
         raise PreventUpdate
 
+
+@app.callback(Output('embedding-graph-2', 'figure'),
+             [Input('embedding-graph', 'figure')])
+def copy_graph(fig):
+    return fig
 
 # @app.callback(Output('waveform-graph', 'figure'),
 #              [Input('embedding-graph', 'selectedData'),
