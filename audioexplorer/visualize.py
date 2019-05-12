@@ -70,9 +70,6 @@ def scatter_plot(x, y, customdata=None, text=None, opacity=0.8) -> go.Figure:
 
 def specgram_base64(y: np.ndarray, fs: int, start: float, end: float, margin: float=0.2) -> str:
     f, ax = plt.subplots()
-    # xticks = np.linspace(start, end, 8).round(2)
-    # ax.set_xticklabels(xticks)
-
     plt.specgram(y, Fs=fs, xextent=[start, end])
     plt.xlabel('Time [s]')
     plt.ylabel('Frequency [Hz]')
