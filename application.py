@@ -140,6 +140,45 @@ def resolve_filtering_expression(df: pd.DataFrame, filter_expression: str):
     return condition
 
 
+def log_user_action(action_type, datetime, session_id, filename=None, embedding_type=None, fftsize=None, bandpass=None,
+                    onset_threshold=None, sample_len=None, selected_features=None):
+    user_ip = get_user_ip()
+    agent = request.headers.get('User-Agent')
+    user_data = session_log.insert_user(
+        action_type=action_type,
+        datetime=datetime,
+        session_id=session_id,
+        filename=filename,
+        agent=agent,
+        user_ip=user_ip,
+        embedding_type=embedding_type,
+        fftsize=fftsize,
+        bandpass=bandpass,
+        onset_threshold=onset_threshold,
+        sample_len=sample_len,
+        selected_features=selected_features,
+    )
+
+    return user_data
+
+
+def apply_triggered():
+    res = False
+    triggers = dash.callback_context.triggered
+    if len(triggers) == 1:
+        res = True if triggers[0].get('prop_id') == 'apply-button.n_clicks' else False
+    return res
+
+
+def relayout_autosize_triggered():
+    res = False
+    triggers = dash.callback_context.triggered
+    if len(triggers) == 1:
+        relayout_event = triggers[0].get('prop_id') == 'spectrogram-full-graph.relayoutData'
+        if relayout_event:
+            res = True if triggers[0].get('value').get('autosize') else False
+    return res
+
 @app.callback(Output('dummy-div', 'children'),
               [Input('sessionid-store', 'data')])
 def login(session_id):
@@ -314,28 +353,6 @@ def log_user_action_cb(mapping, apply_clicks, embedding_type, fftsize, bandpass,
     return user_data
 
 
-def log_user_action(action_type, datetime, session_id, filename=None, embedding_type=None, fftsize=None, bandpass=None,
-                    onset_threshold=None, sample_len=None, selected_features=None):
-    user_ip = get_user_ip()
-    agent = request.headers.get('User-Agent')
-    user_data = session_log.insert_user(
-        action_type=action_type,
-        datetime=datetime,
-        session_id=session_id,
-        filename=filename,
-        agent=agent,
-        user_ip=user_ip,
-        embedding_type=embedding_type,
-        fftsize=fftsize,
-        bandpass=bandpass,
-        onset_threshold=onset_threshold,
-        sample_len=sample_len,
-        selected_features=selected_features,
-    )
-
-    return user_data
-
-
 @app.callback(Output('signed-url-store', 'data'),
               [Input('filename-store', 'data')])
 def upload_to_s3(filename):
@@ -463,10 +480,12 @@ def audio_profile(select_data, url, n_clicks, bandpass):
              [State('bandpass', 'value')])
 def full_spectrogram_graph(select_data, url, selection, n_clicks, bandpass):
     if url is not None:
+        if relayout_autosize_triggered():
+            raise PreventUpdate
         temp_path = f'/tmp/{os.path.splitext(url)[0]}'
         spectrum_path = temp_path + '_spectrum.npy'
         time_path = temp_path + '_time.npy'
-        if selection is not None:
+        if selection is not None and os.path.exists(spectrum_path) and not apply_triggered():
             if 'xaxis.range[0]' in selection and 'xaxis.range[1]' in selection:
                 start = selection['xaxis.range[0]']
                 end = selection['xaxis.range[1]']
@@ -484,11 +503,11 @@ def full_spectrogram_graph(select_data, url, selection, n_clicks, bandpass):
             fs, y = read_wave_local('uploads/' + url)
             lowcut, higcut = bandpass
             y = filters.frequency_filter(y, fs=SAMPLING_RATE, lowcut=lowcut, highcut=higcut)
-            freq, time, Sxx = visualize.calculate_spectrogram(y, fs)
+            freq, time, Sxx = visualize.calculate_spectrogram(y, fs, backend='scipy')
             np.save(spectrum_path, Sxx)
             np.save(time_path, time)
             start = 0
-            end = len(y) / SAMPLING_RATE
+            end = time[-1]
 
         fig = visualize.spectrogram_shaded(S=Sxx, time=time, fs=SAMPLING_RATE, start_time=start, end_time=end)
         return fig
@@ -496,31 +515,30 @@ def full_spectrogram_graph(select_data, url, selection, n_clicks, bandpass):
         raise PreventUpdate
 
 
-@app.callback(Output('waveform-graph', 'figure'),
-             [Input('embedding-graph', 'selectedData'),
-              Input('filename-store', 'data'),
-              Input('waveform-graph', 'relayoutData'),
-              Input('apply-button', 'n_clicks')],
-             [State('bandpass', 'value')])
-def waveform_graph(select_data, url, selection, n_clicks, bandpass):
-    lowcut, higcut = bandpass
-    if selection is not None:
-        if 'xaxis.range[0]' in selection and 'xaxis.range[1]' in selection:
-            start = selection['xaxis.range[0]']
-            end = selection['xaxis.range[1]']
-            y = read_wave_part_from_s3(S3_BUCKET, path=url, fs=SAMPLING_RATE, start=start, end=end)
-            y = y / y.max()
-        else:
-            raise PreventUpdate
-    else:
-        fs, y = read_wave_local('uploads/' + url)
-        start = 0
-        end = len(y) / fs
-
-    y = filters.frequency_filter(y, fs=SAMPLING_RATE, lowcut=lowcut, highcut=higcut)
-    fig = visualize.waveform_shaded(y, fs=SAMPLING_RATE, start=start, end=end)
-    return fig
-
+# @app.callback(Output('waveform-graph', 'figure'),
+#              [Input('embedding-graph', 'selectedData'),
+#               Input('filename-store', 'data'),
+#               Input('waveform-graph', 'relayoutData'),
+#               Input('apply-button', 'n_clicks')],
+#              [State('bandpass', 'value')])
+# def waveform_graph(select_data, url, selection, n_clicks, bandpass):
+#     lowcut, higcut = bandpass
+#     if selection is not None:
+#         if 'xaxis.range[0]' in selection and 'xaxis.range[1]' in selection:
+#             start = selection['xaxis.range[0]']
+#             end = selection['xaxis.range[1]']
+#             y = read_wave_part_from_s3(S3_BUCKET, path=url, fs=SAMPLING_RATE, start=start, end=end)
+#             y = y / y.max()
+#         else:
+#             raise PreventUpdate
+#     else:
+#         fs, y = read_wave_local('uploads/' + url)
+#         start = 0
+#         end = len(y) / fs
+#
+#     y = filters.frequency_filter(y, fs=SAMPLING_RATE, lowcut=lowcut, highcut=higcut)
+#     fig = visualize.waveform_shaded(y, fs=SAMPLING_RATE, start=start, end=end)
+#     return fig
 
 
 def generate_layout():
@@ -674,9 +692,9 @@ def generate_layout():
                             'padding': '10px 30px'
                         },
                         children=[
-                            dcc.Graph(
-                                id='waveform-graph'
-                            ),
+                            # dcc.Graph(
+                            #     id='waveform-graph'
+                            # ),
                             dcc.Graph(
                                 id='spectrogram-full-graph'
                             ),

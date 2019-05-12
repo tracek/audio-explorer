@@ -185,7 +185,9 @@ def waveform_shaded(signal: np.ndarray, fs: int, start=0, end=None):
             'z': z,
             'type': 'heatmap',
             'showscale': False,
-            'colorscale': [[0, 'rgba(255, 255, 255,0)'], [1, '#75baf2']]
+            'colorscale': [[0, 'rgba(255, 255, 255,0)'], [1, '#75baf2']],
+            'hoverinfo': 'x+y',
+
             }],
         'layout': {
             'height': 350,
@@ -242,24 +244,25 @@ def spectrogram_shaded(S, time, fs: int, start_time=0, end_time=None):
     time = time[condition]
     freq = np.linspace(0, fs // 2, num=S.shape[-1])
 
-    highres_threshold = 4000
-    if len(time) < highres_threshold:
-        x = time
-        y = freq
-        z = np.log(S).tolist()
-    else:
-        xrdata = xr.DataArray(S, coords={'time': time, 'freq': freq}, dims=('time', 'freq'))
-        x_range = [time[0], time[-1]]
-        y_range = [0, freq[-1]]
-        cvs = ds.Canvas(plot_width=1500, plot_height=200, x_range=x_range, y_range=y_range)
+    # highres_threshold = 4000
+    # if len(time) < highres_threshold:
+    #     x = time
+    #     y = freq
+    #     z = np.log(S).tolist()
+    # else:
+    S = np.log(S)
+    xrdata = xr.DataArray(S, coords={'time': time, 'freq': freq}, dims=('time', 'freq'))
+    x_range = [time[0], time[-1]]
+    y_range = [0, freq[-1]]
+    cvs = ds.Canvas(plot_width=1500, plot_height=S.shape[-1], x_range=x_range, y_range=y_range)
 
-        raster = cvs.raster(xrdata.T)
-        img = tf.shade(raster)
-        arr = np.array(img)
+    raster = cvs.raster(xrdata.T, interpolate='nearest')
+    img = tf.shade(raster)
+    arr = np.array(img)
 
-        z = arr.tolist()
-        x = np.linspace(x_range[0], x_range[1], len(z[0]))
-        y = np.linspace(y_range[0], y_range[1], len(z))
+    z = arr.tolist()
+    x = np.linspace(x_range[0], x_range[1], len(z[0]))
+    y = np.linspace(y_range[0], y_range[1], len(z))
 
     fig = {
         'data': [{
@@ -271,7 +274,7 @@ def spectrogram_shaded(S, time, fs: int, start_time=0, end_time=None):
             'colorscale': [[0, '#75baf2'], [1, 'rgba(255, 255, 255,0)']]
             }],
         'layout': {
-            'height': 350,
+            'height': 400,
             'xaxis': {
                 'title': 'Time [s]',
                 'showline': True,
@@ -280,14 +283,13 @@ def spectrogram_shaded(S, time, fs: int, start_time=0, end_time=None):
                 'showticklabels': True
             },
             'yaxis': {
-                'title': 'Amplitude',
-                'fixedrange': True,
+                'title': 'Frequency [Hz]',
                 'showline': False,
                 'zeroline': False,
                 'showgrid': False,
-                'showticklabels': False,
-                'ticks': ''
+                'showticklabels': True,
             },
+            'autosize': True
         }
     }
     return fig
