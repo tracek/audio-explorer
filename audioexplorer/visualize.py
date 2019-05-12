@@ -183,8 +183,6 @@ def waveform_shaded(signal: np.ndarray, fs: int, start=0, end=None):
             'type': 'heatmap',
             'showscale': False,
             'colorscale': [[0, 'rgba(255, 255, 255,0)'], [1, '#75baf2']],
-            'hoverinfo': 'x+y',
-
             }],
         'layout': {
             'height': 350,
@@ -268,7 +266,8 @@ def spectrogram_shaded(S, time, fs: int, start_time=0, end_time=None):
             'z': z,
             'type': 'heatmap',
             'showscale': False,
-            'colorscale': [[0, '#75baf2'], [1, 'rgba(255, 255, 255,0)']]
+            'colorscale': [[0, '#75baf2'], [1, 'rgba(255, 255, 255,0)']],
+            'hovertemplate': "Frequency: %{y:.0f} Hz<br>" + "Time: %{x:.2f} s<br>" + "<extra></extra>",
             }],
         'layout': {
             'height': 400,
