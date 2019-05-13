@@ -16,6 +16,7 @@
 #      along with Audio Explorer.  If not, see <https://www.gnu.org/licenses/>.
 
 import os
+import wave
 import numpy as np
 import boto3
 import librosa
@@ -86,3 +87,18 @@ def read_wave_part_from_s3(bucket: str, path: str, fs: int, start: int, end: int
     wav = np.frombuffer(result, dtype=dtype)
     return wav
 
+
+def read_wav_parts_from_local(path: str, onsets: list, dtype = 'int16'):
+    wavs = []
+    with wave.open(path, mode='rb') as wavread:
+        fs = wavread.getframerate()
+        for start_s, end_s in onsets:
+            start = int(start_s * fs)
+            end = int(end_s * fs)
+            sample_len = end - start
+            wavread.setpos(start)
+            wav_bytes = wavread.readframes(sample_len)
+            wav_array = np.frombuffer(wav_bytes, dtype=dtype)
+            wavs.append(wav_array)
+
+    return wavs
