@@ -22,6 +22,7 @@ import boto3
 import librosa
 import sox
 import logging
+from scipy.io import wavfile
 
 
 def is_conversion_required(filepath):
@@ -48,7 +49,8 @@ def convert_to_wav(input_path, output_path):
 
 def read_wave_local(path: str) -> (int, np.ndarray):
     # fs, signal = wavfile.read(path)
-    signal, fs = librosa.load(path=path, sr=16000, mono=True)
+    fs, signal = wavfile.read(path)
+    signal = signal / (2**15 - 1)
     return fs, signal
 
 

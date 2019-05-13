@@ -218,11 +218,32 @@ def calculate_spectrogram(y, fs, block_size=1024, backend='yaafe'):
     return freq, time, Sxx
 
 
-def time_to_sample(time, fs):
-    return int(time * fs)
+def shapes_from_onsets(onsets, x_min, x_max, color='#d3d3d3'):
+    if onsets:
+        shapes = []
+        for start, end in onsets:
+            if (start > x_min) and (end < x_max):
+                shape = {
+                    'type': 'rect',
+                    'xref': 'x',
+                    'yref': 'paper',
+                    'x0': start,
+                    'y0': 0,
+                    'x1': end,
+                    'y1': 1,
+                    'fillcolor': color,
+                    'opacity': 0.1,
+                    'line': {
+                        'width': 0,
+                    }
+                }
+                shapes.append(shape)
+    else:
+        shapes = None
+    return shapes
 
 
-def spectrogram_shaded(S, time, fs: int, start_time=0, end_time=None):
+def spectrogram_shaded(S, time, fs: int, start_time=0, end_time=None, onsets=None):
     """
 
     :param S: spectogram 2d array
@@ -233,10 +254,11 @@ def spectrogram_shaded(S, time, fs: int, start_time=0, end_time=None):
     :param step_size:
     :return:
     """
+    if start_time and end_time:
+        condition = (time > start_time) & ( time < end_time)
+        S = S[condition]
+        time = time[condition]
 
-    condition = (time > start_time) & ( time < end_time)
-    S = S[condition]
-    time = time[condition]
     freq = np.linspace(0, fs // 2, num=S.shape[-1])
 
     # highres_threshold = 4000
@@ -285,7 +307,7 @@ def spectrogram_shaded(S, time, fs: int, start_time=0, end_time=None):
                 'showgrid': False,
                 'showticklabels': True,
             },
-            'autosize': True
+#            'shapes': shapes_from_onsets(onsets, x_min=start_time, x_max=end_time, color='red')
         }
     }
     return fig

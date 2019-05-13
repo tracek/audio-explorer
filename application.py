@@ -36,7 +36,7 @@ from dash.exceptions import PreventUpdate
 from botocore.client import Config
 
 from settings import S3_BUCKET, AWS_REGION, SERVE_LOCAL, SAMPLING_RATE, AUDIO_MARGIN
-from audioexplorer.audio_io import read_wave_local, read_wave_part_from_s3, convert_to_wav
+from audioexplorer.audio_io import read_wave_local, read_wave_part_from_s3, convert_to_wav, read_wav_parts_from_local
 from audioexplorer.features import get, FEATURES
 from audioexplorer.embedding import get_embeddings, EMBEDDINGS
 from audioexplorer import visualize
@@ -175,6 +175,25 @@ def relayout_autosize_triggered():
         if relayout_event:
             res = True if triggers[0].get('value').get('autosize') else False
     return res
+
+
+def relayout_range_change_triggered():
+    res = False
+    triggers = dash.callback_context.triggered
+    if len(triggers) == 1:
+        relayout_event = triggers[0].get('prop_id') == 'spectrogram-full-graph.relayoutData'
+        if relayout_event:
+            res = True if triggers[0].get('value').get('xaxis.range[0') else False
+    return res
+
+
+def selectedData_triggered():
+    res = False
+    triggers = dash.callback_context.triggered
+    if len(triggers) == 1:
+        res = True if triggers[0].get('prop_id') == 'embedding-graph.selectedData' else False
+    return res
+
 
 @app.callback(Output('dummy-div', 'children'),
               [Input('sessionid-store', 'data')])
@@ -384,12 +403,14 @@ def plot_embeddings(filename, n_clicks, embedding_type, fftsize, bandpass, onset
         features = get(X, fs, n_jobs=1, selected_features=selected_features, lowcut=lowpass, highcut=highpass,
                        block_size=fftsize, onset_detector_type='hfc', onset_silence_threshold=-90,
                        onset_threshold=onset_threshold, min_duration_s=min_duration,    sample_len=sample_len)
-        features_for_emb = features.drop(columns=['onset', 'offset'])
 
         params = map_parameters(embedding_type, neighbours)
 
         try:
-            embeddings, warning_msg = get_embeddings(features_for_emb, type=embedding_type, n_jobs=1, **params)
+            embeddings, warning_msg = get_embeddings(
+                data=features.drop(columns=['onset', 'offset']),
+                type=embedding_type, n_jobs=1,
+                **params)
 
             # features.insert(0, column='filename', value=filenames[-1])
             extra_data = ['onset', 'offset']
@@ -457,7 +478,7 @@ def audio_profile(select_data, url, n_clicks, bandpass):
     if url:
         if select_data:
             onsets = [point['customdata'] for point in select_data['points']]
-            wavs = [read_wave_part_from_s3(S3_BUCKET, path=url, fs=SAMPLING_RATE, start=start, end=end) for start, end in onsets]
+            wavs = read_wav_parts_from_local(path='uploads/' + url, onsets=onsets)
             wavs = np.concatenate(wavs)
         else: # None selected
             fs, wavs = read_wave_local('uploads/' + url)
@@ -474,48 +495,51 @@ def audio_profile(select_data, url, n_clicks, bandpass):
               Input('filename-store', 'data'),
               Input('spectrogram-full-graph', 'relayoutData'),
               Input('apply-button', 'n_clicks')],
-             [State('bandpass', 'value')])
-def full_spectrogram_graph(select_data, url, selection, n_clicks, bandpass):
+             [State('bandpass', 'value'),
+              State('feature-store', 'data'),
+              State('spectrogram-full-graph', 'figure')])
+def full_spectrogram_graph(select_data, url, selection, n_clicks, bandpass, features, fig):
     if url is not None:
         if relayout_autosize_triggered():
             raise PreventUpdate
         temp_path = f'/tmp/{os.path.splitext(url)[0]}'
         spectrum_path = temp_path + '_spectrum.npy'
         time_path = temp_path + '_time.npy'
-        if selection is not None and os.path.exists(spectrum_path) and not apply_triggered():
-            if 'xaxis.range[0]' in selection and 'xaxis.range[1]' in selection:
-                start = selection['xaxis.range[0]']
-                end = selection['xaxis.range[1]']
-                Sxx = np.load(spectrum_path)
-                time = np.load(time_path)
-            elif 'xaxis.autorange' in selection:
-                # Handle reset axes evenyt
-                Sxx = np.load(spectrum_path)
-                time = np.load(time_path)
-                start = 0
-                end = time[-1]
-            else:
-                raise PreventUpdate
+
+        if select_data and selectedData_triggered():
+            start = fig['data'][0]['x'][0]
+            end = fig['data'][0]['x'][-1]
+            onsets = [point['customdata'] for point in select_data['points']]
+            shapes = visualize.shapes_from_onsets(onsets, x_min=start, x_max=end, color='red')
+            fig['layout']['shapes'] = shapes
+        elif selection is not None and 'xaxis.range[0]' in selection and 'xaxis.range[1]' in selection:
+            start = selection['xaxis.range[0]']
+            end = selection['xaxis.range[1]']
+            Sxx = np.load(spectrum_path)
+            time = np.load(time_path)
+            fig = visualize.spectrogram_shaded(S=Sxx, time=time, fs=SAMPLING_RATE, start_time=start, end_time=end)
+        elif os.path.exists(spectrum_path) and not apply_triggered():
+            Sxx = np.load(spectrum_path)
+            time = np.load(time_path)
+            fig = visualize.spectrogram_shaded(S=Sxx, time=time, fs=SAMPLING_RATE)
         else:
             fs, y = read_wave_local('uploads/' + url)
             lowcut, higcut = bandpass
             y = filters.frequency_filter(y, fs=SAMPLING_RATE, lowcut=lowcut, highcut=higcut)
-            freq, time, Sxx = visualize.calculate_spectrogram(y, fs, backend='scipy')
+            freq, time, Sxx = visualize.calculate_spectrogram(y, fs, backend='yaafe')
             np.save(spectrum_path, Sxx)
             np.save(time_path, time)
-            start = 0
-            end = time[-1]
+            fig = visualize.spectrogram_shaded(S=Sxx, time=time, fs=SAMPLING_RATE)
 
-        fig = visualize.spectrogram_shaded(S=Sxx, time=time, fs=SAMPLING_RATE, start_time=start, end_time=end)
         return fig
     else:
         raise PreventUpdate
 
 
-@app.callback(Output('embedding-graph-2', 'figure'),
-             [Input('embedding-graph', 'figure')])
-def copy_graph(fig):
-    return fig
+# @app.callback(Output('embedding-graph-2', 'figure'),
+#              [Input('embedding-graph', 'figure')])
+# def copy_graph(fig):
+#     return fig
 
 # @app.callback(Output('waveform-graph', 'figure'),
 #              [Input('embedding-graph', 'selectedData'),
