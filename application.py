@@ -561,65 +561,32 @@ def update_table(select_data):
 #     [Input('reduce-noise-button', 'n_clicks')],
 #     [State('filename-store', 'data')]
 # )
-# def
-
-# @app.callback(
-#     [Output('', 'children')],
-#     [Input('embedding-graph', 'selectedData')])
-# def update_table(select_data):
-#     return html.Button(id='reduce-noise-button')
-
-#
-# @app.callback(Output('div-spectrogram', 'figure'),
-#              [Input('embedding-graph', 'selectedData'),
-#               Input('spectrum-graph', 'figure'),
-#               Input('apply-button', 'n_clicks')],
-#              [State('bandpass', 'value')])
-# def audio_profile(select_data, url, n_clicks, bandpass):
-#     if url:
-#         if select_data:
-#             onsets = [point['customdata'] for point in select_data['points']]
-#             wavs = read_wav_parts_from_local(path='uploads/' + url, onsets=onsets)
-#             wavs = np.concatenate(wavs)
-#         else: # None selected
-#             fs, wavs = read_wave_local('uploads/' + url)
-#         lowcut, higcut = bandpass
-#         wavs = filters.frequency_filter(wavs, fs=SAMPLING_RATE, lowcut=lowcut, highcut=higcut)
-#         fig = visualize.power_spectrum(wavs, fs=SAMPLING_RATE)
-#         return fig
-#     else:
-#         raise PreventUpdate
 
 
-# @app.callback(Output('embedding-graph-2', 'figure'),
-#              [Input('embedding-graph', 'figure')])
-# def copy_graph(fig):
-#     return fig
+@app.callback(Output('waveform-graph', 'figure'),
+             [Input('embedding-graph', 'selectedData'),
+              Input('filename-store', 'data'),
+              Input('waveform-graph', 'relayoutData'),
+              Input('apply-button', 'n_clicks')],
+             [State('bandpass', 'value')])
+def waveform_graph(select_data, url, selection, n_clicks, bandpass):
+    lowcut, higcut = bandpass
+    if selection is not None:
+        if 'xaxis.range[0]' in selection and 'xaxis.range[1]' in selection:
+            start = selection['xaxis.range[0]']
+            end = selection['xaxis.range[1]']
+            y = read_wave_part_from_s3(S3_BUCKET, path=url, fs=SAMPLING_RATE, start=start, end=end)
+            y = y / y.max()
+        else:
+            raise PreventUpdate
+    else:
+        fs, y = read_wave_local('uploads/' + url)
+        start = 0
+        end = len(y) / fs
 
-# @app.callback(Output('waveform-graph', 'figure'),
-#              [Input('embedding-graph', 'selectedData'),
-#               Input('filename-store', 'data'),
-#               Input('waveform-graph', 'relayoutData'),
-#               Input('apply-button', 'n_clicks')],
-#              [State('bandpass', 'value')])
-# def waveform_graph(select_data, url, selection, n_clicks, bandpass):
-#     lowcut, higcut = bandpass
-#     if selection is not None:
-#         if 'xaxis.range[0]' in selection and 'xaxis.range[1]' in selection:
-#             start = selection['xaxis.range[0]']
-#             end = selection['xaxis.range[1]']
-#             y = read_wave_part_from_s3(S3_BUCKET, path=url, fs=SAMPLING_RATE, start=start, end=end)
-#             y = y / y.max()
-#         else:
-#             raise PreventUpdate
-#     else:
-#         fs, y = read_wave_local('uploads/' + url)
-#         start = 0
-#         end = len(y) / fs
-#
-#     y = filters.frequency_filter(y, fs=SAMPLING_RATE, lowcut=lowcut, highcut=higcut)
-#     fig = visualize.waveform_shaded(y, fs=SAMPLING_RATE, start=start, end=end)
-#     return fig
+    y = filters.frequency_filter(y, fs=SAMPLING_RATE, lowcut=lowcut, highcut=higcut)
+    fig = visualize.waveform_shaded(y, fs=SAMPLING_RATE, start=start, end=end)
+    return fig
 
 
 def generate_layout():
@@ -774,24 +741,24 @@ def generate_layout():
                             'padding': '10px 30px'
                         },
                         children=[
-                            # dcc.Graph(
-                            #     id='waveform-graph'
-                            # ),
+                            dcc.Graph(
+                                id='waveform-graph'
+                            ),
                             dcc.Graph(
                                 id='spectrogram-full-graph'
                             ),
-                            html.Div(className="row", children=[
-                                html.Div(className="six columns", children=[
-                                    dcc.Graph(
-                                        id='embedding-graph-2'
-                                    )
-                                ]),
-                                html.Div(className="six columns", children=[
-                                    dcc.Graph(
-                                        id='spectrum-graph'
-                                    )
-                                ])
-                            ]),
+                            # html.Div(className="row", children=[
+                            #     html.Div(className="six columns", children=[
+                            #         dcc.Graph(
+                            #             id='embedding-graph-2'
+                            #         )
+                            #     ]),
+                            #     html.Div(className="six columns", children=[
+                            #         dcc.Graph(
+                            #             id='spectrum-graph'
+                            #         )
+                            #     ])
+                            # ]),
                         ]
                     )
                 ),
