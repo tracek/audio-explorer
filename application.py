@@ -159,14 +159,6 @@ def log_user_action(action_type, datetime, session_id, filename=None, embedding_
     return user_data
 
 
-def apply_triggered():
-    res = False
-    triggers = dash.callback_context.triggered
-    if len(triggers) == 1:
-        res = True if triggers[0].get('prop_id') == 'apply-button.n_clicks' else False
-    return res
-
-
 def relayout_autosize_triggered():
     res = False
     triggers = dash.callback_context.triggered
@@ -183,15 +175,17 @@ def relayout_range_change_triggered():
     if len(triggers) == 1:
         relayout_event = triggers[0].get('prop_id') == 'spectrogram-full-graph.relayoutData'
         if relayout_event:
-            res = True if triggers[0].get('value').get('xaxis.range[0') else False
+            res = True if triggers[0].get('value').get('xaxis.range[0]') else False
     return res
 
 
-def selectedData_triggered():
+def event_triggered(event, option=None):
     res = False
     triggers = dash.callback_context.triggered
     if len(triggers) == 1:
-        res = True if triggers[0].get('prop_id') == 'embedding-graph.selectedData' else False
+        res = True if triggers[0].get('prop_id') == event else False
+        if option and res:
+            res = True if triggers[0].get('value').get(option) else False
     return res
 
 
@@ -446,48 +440,66 @@ def update_player_status(click_data, url):
 
 
 @app.callback(Output('div-spectrogram', 'children'),
-              [Input('embedding-graph', 'clickData')],
-              [State('filename-store', 'data')])
-def display_click_image(click_data, url):
-    if click_data is not None:
-        start, end = click_data['points'][0]['customdata']
-        wav = read_wave_part_from_s3(
-            bucket=S3_BUCKET,
-            path=url,
-            fs=SAMPLING_RATE,
-            start=start - AUDIO_MARGIN,
-            end=end + AUDIO_MARGIN)
-        im = visualize.specgram_base64(y=wav, fs=SAMPLING_RATE, start=start - AUDIO_MARGIN, end=end + AUDIO_MARGIN)
-
-        return html.Img(
-            src='data:image/png;base64, ' + im,
-            style={
-                'height': '25vh',
-                'display': 'block',
-                'margin': 'auto'
-            }
-        )
-
-
-@app.callback(Output('spectrum-graph', 'figure'),
-             [Input('embedding-graph', 'selectedData'),
-              Input('filename-store', 'data'),
-              Input('apply-button', 'n_clicks')],
-             [State('bandpass', 'value')])
-def audio_profile(select_data, url, n_clicks, bandpass):
+              [Input('embedding-graph', 'clickData'),
+               Input('embedding-graph', 'selectedData'),
+               Input('apply-button', 'n_clicks'),
+               Input('filename-store', 'data')],
+               [State('bandpass', 'value')])
+def display_click_image(click_data, select_data, n_clicks, url, bandpass):
     if url:
-        if select_data:
-            onsets = [point['customdata'] for point in select_data['points']]
-            wavs = read_wav_parts_from_local(path='uploads/' + url, onsets=onsets)
-            wavs = np.concatenate(wavs)
-        else: # None selected
-            fs, wavs = read_wave_local('uploads/' + url)
-        lowcut, higcut = bandpass
-        wavs = filters.frequency_filter(wavs, fs=SAMPLING_RATE, lowcut=lowcut, highcut=higcut)
-        fig = visualize.power_spectrum(wavs, fs=SAMPLING_RATE)
-        return fig
+        if click_data is not None and event_triggered('embedding-graph.clickData'):
+            start, end = click_data['points'][0]['customdata']
+            wav = read_wave_part_from_s3(
+                bucket=S3_BUCKET,
+                path=url,
+                fs=SAMPLING_RATE,
+                start=start - AUDIO_MARGIN,
+                end=end + AUDIO_MARGIN)
+            im = visualize.specgram_base64(y=wav, fs=SAMPLING_RATE, start=start - AUDIO_MARGIN, end=end + AUDIO_MARGIN)
+
+            return html.Img(
+                src='data:image/png;base64, ' + im,
+                style={
+                    'height': '25vh',
+                    'display': 'block',
+                    'margin': 'auto'
+                }
+            )
+        else:
+            if select_data is not None:
+                onsets = [point['customdata'] for point in select_data['points']]
+                wavs = read_wav_parts_from_local(path='uploads/' + url, onsets=onsets)
+                wavs = np.concatenate(wavs)
+            else:
+                fs, wavs = read_wave_local('uploads/' + url)
+
+            lowcut, higcut = bandpass
+            wavs = filters.frequency_filter(wavs, fs=SAMPLING_RATE, lowcut=lowcut, highcut=higcut)
+            fig = visualize.power_spectrum(wavs, fs=SAMPLING_RATE)
+            return dcc.Graph(id='spectrum', figure=fig)
     else:
         raise PreventUpdate
+
+
+# @app.callback(Output('div-spectrogram', 'children'),
+#              [Input('embedding-graph', 'selectedData'),
+#               Input('filename-store', 'data'),
+#               Input('apply-button', 'n_clicks')],
+#              [State('bandpass', 'value')])
+# def audio_profile(select_data, url, n_clicks, bandpass):
+#     if url:
+#         if select_data:
+#             onsets = [point['customdata'] for point in select_data['points']]
+#             wavs = read_wav_parts_from_local(path='uploads/' + url, onsets=onsets)
+#             wavs = np.concatenate(wavs)
+#         else: # None selected
+#             fs, wavs = read_wave_local('uploads/' + url)
+#         lowcut, higcut = bandpass
+#         wavs = filters.frequency_filter(wavs, fs=SAMPLING_RATE, lowcut=lowcut, highcut=higcut)
+#         fig = visualize.power_spectrum(wavs, fs=SAMPLING_RATE)
+#         return dcc.Graph(id='spectrum', figure=fig)
+#     else:
+#         raise PreventUpdate
 
 
 @app.callback(Output('spectrogram-full-graph', 'figure'),
@@ -506,7 +518,7 @@ def full_spectrogram_graph(select_data, url, selection, n_clicks, bandpass, feat
         spectrum_path = temp_path + '_spectrum.npy'
         time_path = temp_path + '_time.npy'
 
-        if select_data and selectedData_triggered():
+        if select_data and event_triggered('embedding-graph.selectedData'):
             start = fig['data'][0]['x'][0]
             end = fig['data'][0]['x'][-1]
             onsets = [point['customdata'] for point in select_data['points']]
@@ -518,7 +530,7 @@ def full_spectrogram_graph(select_data, url, selection, n_clicks, bandpass, feat
             Sxx = np.load(spectrum_path)
             time = np.load(time_path)
             fig = visualize.spectrogram_shaded(S=Sxx, time=time, fs=SAMPLING_RATE, start_time=start, end_time=end)
-        elif os.path.exists(spectrum_path) and not apply_triggered():
+        elif os.path.exists(spectrum_path) and not event_triggered('apply-button.n_clicks'):
             Sxx = np.load(spectrum_path)
             time = np.load(time_path)
             fig = visualize.spectrogram_shaded(S=Sxx, time=time, fs=SAMPLING_RATE)
@@ -534,6 +546,49 @@ def full_spectrogram_graph(select_data, url, selection, n_clicks, bandpass, feat
         return fig
     else:
         raise PreventUpdate
+
+
+@app.callback(
+    Output('reduce-noise-container', 'children'),
+    [Input('embedding-graph', 'selectedData')])
+def update_table(select_data):
+    if select_data:
+        return html.Button('Remove selected frequencies', id='reduce-noise-button')
+
+#
+# @app.callback(
+#      Output('filename-store', 'data'),
+#     [Input('reduce-noise-button', 'n_clicks')],
+#     [State('filename-store', 'data')]
+# )
+# def
+
+# @app.callback(
+#     [Output('', 'children')],
+#     [Input('embedding-graph', 'selectedData')])
+# def update_table(select_data):
+#     return html.Button(id='reduce-noise-button')
+
+#
+# @app.callback(Output('div-spectrogram', 'figure'),
+#              [Input('embedding-graph', 'selectedData'),
+#               Input('spectrum-graph', 'figure'),
+#               Input('apply-button', 'n_clicks')],
+#              [State('bandpass', 'value')])
+# def audio_profile(select_data, url, n_clicks, bandpass):
+#     if url:
+#         if select_data:
+#             onsets = [point['customdata'] for point in select_data['points']]
+#             wavs = read_wav_parts_from_local(path='uploads/' + url, onsets=onsets)
+#             wavs = np.concatenate(wavs)
+#         else: # None selected
+#             fs, wavs = read_wave_local('uploads/' + url)
+#         lowcut, higcut = bandpass
+#         wavs = filters.frequency_filter(wavs, fs=SAMPLING_RATE, lowcut=lowcut, highcut=higcut)
+#         fig = visualize.power_spectrum(wavs, fs=SAMPLING_RATE)
+#         return fig
+#     else:
+#         raise PreventUpdate
 
 
 # @app.callback(Output('embedding-graph-2', 'figure'),
@@ -613,14 +668,14 @@ def generate_layout():
                                         simultaneousUploads=1,
                                         maxFileSize=5 * 1024 * 1024 * 500,  # 500 MB
                                         service="/upload_resumable",
-                                        textLabel="UPLOAD AUDIO",
+                                        textLabel="UPLOAD",
                                         startButton=False,
                                         pauseButton=False,
                                         cancelButton=False,
                                         defaultStyle=upload_style,
                                         activeStyle=upload_style,
                                         completeStyle=upload_style,
-                                        completedMessage='UPLOAD AUDIO'
+                                        completedMessage='UPLOAD'
                                     ),
                                     html.Button('Apply', id='apply-button', style=upload_style),
                                 ], style={'columnCount': 2}),
@@ -701,7 +756,8 @@ def generate_layout():
                                     },
                                     value=20
                                 ),
-                                html.Div(id='div-spectrogram', style={'margin-top': '20px'})
+                                html.Div(id='div-spectrogram', style={'margin-top': '20px'}),
+                                html.Div(id='reduce-noise-container', style={'margin-top': '20px'})
                             ]),
                         ]),
                     ]
