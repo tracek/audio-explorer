@@ -20,7 +20,11 @@ RUN conda install -c conda-forge --quiet --yes \
     psycopg2 \
     datashader=0.7.0
 
-RUN pip install --no-cache-dir httpagentparser ipinfo dash_audio_components dash_upload_components==0.0.2 \
+RUN pip install --no-cache-dir httpagentparser \
+    ipinfo \
+    dash_audio_components \
+    dash_upload_components \
+    noisereduce \
     dash==0.42.0 \
     sox==1.3.7
 
