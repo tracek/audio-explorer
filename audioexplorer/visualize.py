@@ -202,6 +202,7 @@ def waveform_shaded(signal: np.ndarray, fs: int, start=0, end=None):
                 'showticklabels': False,
                 'ticks': ''
             },
+            'title': 'Waveform'
         }
     }
     return fig
@@ -307,7 +308,7 @@ def spectrogram_shaded(S, time, fs: int, start_time=0, end_time=None, onsets=Non
                 'showgrid': False,
                 'showticklabels': True,
             },
-#            'shapes': shapes_from_onsets(onsets, x_min=start_time, x_max=end_time, color='red')
+            'title': 'Spectrogram'
         }
     }
     return fig

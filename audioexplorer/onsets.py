@@ -42,11 +42,12 @@ class OnsetDetector(object):
             return self.onset_detector.get_last_s()
 
     def get_all(self, signal):
-        signal_windowed = np.array_split(signal, np.arange(self.hop, len(signal), self.hop))
+        signal_windowed = np.array_split(signal.astype('float32'), np.arange(self.hop, len(signal), self.hop))
         onsets = []
         for frame in signal_windowed[:-1]:
-            if self.onset_detector(frame):
-                onsets.append(self.onset_detector.get_last_s())
+            if frame.any():
+                if self.onset_detector(frame):
+                    onsets.append(self.onset_detector.get_last_s())
         return np.array(onsets[1:])
 
 

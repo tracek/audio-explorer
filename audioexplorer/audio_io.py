@@ -39,6 +39,7 @@ def convert_to_wav(input_path, output_path):
         raise Exception(f'Input path {input_path} is not there!')
     if is_conversion_required(input_path):
         tfm = sox.Transformer()
+        tfm.set_globals(dither=True)
         tfm.rate(samplerate=16000)
         tfm.norm(db_level=-3)
         tfm.channels(1)
@@ -101,6 +102,7 @@ def read_wav_parts_from_local(path: str, onsets: list, dtype = 'int16'):
             wavread.setpos(start)
             wav_bytes = wavread.readframes(sample_len)
             wav_array = np.frombuffer(wav_bytes, dtype=dtype)
+            wav_array = wav_array / (2 ** 15 - 1)
             wavs.append(wav_array)
 
     return wavs
