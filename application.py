@@ -732,9 +732,9 @@ def generate_layout():
                             'padding': '10px 30px'
                         },
                         children=[
-                            dcc.Graph(
-                                id='waveform-graph'
-                            ),
+                            # dcc.Graph(
+                            #     id='waveform-graph'
+                            # ),
                             dcc.Graph(
                                 id='spectrogram-full-graph'
                             ),
