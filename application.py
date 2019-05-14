@@ -29,6 +29,7 @@ import dash_html_components as html
 import numpy as np
 import pandas as pd
 import urllib.parse
+import noisereduce as nr
 from datetime import datetime
 from flask import request
 from dash.dependencies import Input, Output, State
@@ -36,9 +37,9 @@ from dash.exceptions import PreventUpdate
 from botocore.client import Config
 
 from settings import S3_BUCKET, AWS_REGION, SERVE_LOCAL, SAMPLING_RATE, AUDIO_MARGIN
-from audioexplorer.audio_io import read_wave_local, read_wave_part_from_s3, convert_to_wav, read_wav_parts_from_local
 from audioexplorer.features import get, FEATURES
 from audioexplorer.embedding import get_embeddings, EMBEDDINGS
+from audioexplorer import audio_io
 from audioexplorer import visualize
 from audioexplorer import session_log
 from audioexplorer import filters
@@ -231,7 +232,7 @@ def show_features_in_table(data):
 def update_table(data, select_data, pagination_settings, sorting_settings, filtering_settings):
     filtering_expressions = filtering_settings.split(' && ')
     df = pd.DataFrame(data)
-    if select_data:
+    if select_data and event_triggered('embedding-graph.clickData'):
         selected_points = [point['pointIndex'] for point in select_data['points']]
         df = df.loc[selected_points]
     for filter_expression in filtering_expressions:
@@ -260,7 +261,7 @@ def update_table(data, select_data, pagination_settings, sorting_settings, filte
                Input('feature-store', 'data')])
 def update_download_link(select_data, data):
     df = pd.DataFrame(data)
-    if select_data:
+    if select_data and event_triggered('embedding-graph.selectedData'):
         selected_points = [point['pointIndex'] for point in select_data['points']]
         df = df.loc[selected_points]
     csv_string = df.to_csv(index=False, encoding='utf-8')
@@ -324,7 +325,7 @@ def create_file_key_mapping(filenames):
 @app.callback(Output('filename-store', 'data'),
               [Input('mapping-store', 'data')])
 def convert(mapping):
-    convert_to_wav(input_path=mapping['filepath'], output_path='uploads/' + mapping['key'])
+    audio_io.convert_to_wav(input_path=mapping['filepath'], output_path='uploads/' + mapping['key'])
     return mapping['key']
 
 
@@ -393,7 +394,7 @@ def plot_embeddings(filename, n_clicks, embedding_type, fftsize, bandpass, onset
         filepath = 'uploads/' + filename
         lowpass, highpass = bandpass
         min_duration = sample_len - 0.05
-        fs, X = read_wave_local(filepath)
+        fs, X = audio_io.read_wave_local(filepath)
         features = get(X, fs, n_jobs=1, selected_features=selected_features, lowcut=lowpass, highcut=highpass,
                        block_size=fftsize, onset_detector_type='hfc', onset_silence_threshold=-90,
                        onset_threshold=onset_threshold, min_duration_s=min_duration,    sample_len=sample_len)
@@ -449,7 +450,7 @@ def display_click_image(click_data, select_data, n_clicks, url, bandpass):
     if url:
         if click_data is not None and event_triggered('embedding-graph.clickData'):
             start, end = click_data['points'][0]['customdata']
-            wav = read_wave_part_from_s3(
+            wav = audio_io.read_wave_part_from_s3(
                 bucket=S3_BUCKET,
                 path=url,
                 fs=SAMPLING_RATE,
@@ -468,10 +469,10 @@ def display_click_image(click_data, select_data, n_clicks, url, bandpass):
         else:
             if select_data is not None:
                 onsets = [point['customdata'] for point in select_data['points']]
-                wavs = read_wav_parts_from_local(path='uploads/' + url, onsets=onsets)
+                wavs = audio_io.read_wav_parts_from_local(path='uploads/' + url, onsets=onsets)
                 wavs = np.concatenate(wavs)
             else:
-                fs, wavs = read_wave_local('uploads/' + url)
+                fs, wavs = audio_io.read_wave_local('uploads/' + url)
 
             lowcut, higcut = bandpass
             wavs = filters.frequency_filter(wavs, fs=SAMPLING_RATE, lowcut=lowcut, highcut=higcut)
@@ -479,27 +480,6 @@ def display_click_image(click_data, select_data, n_clicks, url, bandpass):
             return dcc.Graph(id='spectrum', figure=fig)
     else:
         raise PreventUpdate
-
-
-# @app.callback(Output('div-spectrogram', 'children'),
-#              [Input('embedding-graph', 'selectedData'),
-#               Input('filename-store', 'data'),
-#               Input('apply-button', 'n_clicks')],
-#              [State('bandpass', 'value')])
-# def audio_profile(select_data, url, n_clicks, bandpass):
-#     if url:
-#         if select_data:
-#             onsets = [point['customdata'] for point in select_data['points']]
-#             wavs = read_wav_parts_from_local(path='uploads/' + url, onsets=onsets)
-#             wavs = np.concatenate(wavs)
-#         else: # None selected
-#             fs, wavs = read_wave_local('uploads/' + url)
-#         lowcut, higcut = bandpass
-#         wavs = filters.frequency_filter(wavs, fs=SAMPLING_RATE, lowcut=lowcut, highcut=higcut)
-#         fig = visualize.power_spectrum(wavs, fs=SAMPLING_RATE)
-#         return dcc.Graph(id='spectrum', figure=fig)
-#     else:
-#         raise PreventUpdate
 
 
 @app.callback(Output('spectrogram-full-graph', 'figure'),
@@ -535,7 +515,7 @@ def full_spectrogram_graph(select_data, url, selection, n_clicks, bandpass, feat
             time = np.load(time_path)
             fig = visualize.spectrogram_shaded(S=Sxx, time=time, fs=SAMPLING_RATE)
         else:
-            fs, y = read_wave_local('uploads/' + url)
+            fs, y = audio_io.read_wave_local('uploads/' + url)
             lowcut, higcut = bandpass
             y = filters.frequency_filter(y, fs=SAMPLING_RATE, lowcut=lowcut, highcut=higcut)
             freq, time, Sxx = visualize.calculate_spectrogram(y, fs, backend='yaafe')
@@ -555,38 +535,49 @@ def update_table(select_data):
     if select_data:
         return html.Button('Remove selected frequencies', id='reduce-noise-button')
 
+
+@app.callback(
+     Output('apply-button', 'n_clicks'),
+    [Input('reduce-noise-button', 'n_clicks')],
+    [State('filename-store', 'data'),
+     State('embedding-graph', 'selectedData')]
+)
+def reduce_noise(click, url, select_data):
+    if url is not None and select_data is not None:
+        fs, y = audio_io.read_wave_local('uploads/' + url)
+        onsets = [point['customdata'] for point in select_data['points']]
+        noises = [y[int(start_s * fs): int(end_s * fs)] for start_s, end_s in onsets]
+        noises = np.concatenate(noises)
+        y = nr.reduce_noise(audio_clip=y, noise_clip=noises)
+        audio_io.save_wav(y, fs, path='uploads/' + url)
+        return 1
+
+
+
+# @app.callback(Output('waveform-graph', 'figure'),
+#              [Input('embedding-graph', 'selectedData'),
+#               Input('filename-store', 'data'),
+#               Input('waveform-graph', 'relayoutData'),
+#               Input('apply-button', 'n_clicks')],
+#              [State('bandpass', 'value')])
+# def waveform_graph(select_data, url, selection, n_clicks, bandpass):
+#     lowcut, higcut = bandpass
+#     if selection is not None:
+#         if 'xaxis.range[0]' in selection and 'xaxis.range[1]' in selection:
+#             start = selection['xaxis.range[0]']
+#             end = selection['xaxis.range[1]']
+#             y = read_wave_part_from_s3(S3_BUCKET, path=url, fs=SAMPLING_RATE, start=start, end=end)
+#             y = y / y.max()
+#         else:
+#             raise PreventUpdate
+#     else:
+#         fs, y = read_wave_local('uploads/' + url)
+#         start = 0
+#         end = len(y) / fs
 #
-# @app.callback(
-#      Output('filename-store', 'data'),
-#     [Input('reduce-noise-button', 'n_clicks')],
-#     [State('filename-store', 'data')]
-# )
-
-
-@app.callback(Output('waveform-graph', 'figure'),
-             [Input('embedding-graph', 'selectedData'),
-              Input('filename-store', 'data'),
-              Input('waveform-graph', 'relayoutData'),
-              Input('apply-button', 'n_clicks')],
-             [State('bandpass', 'value')])
-def waveform_graph(select_data, url, selection, n_clicks, bandpass):
-    lowcut, higcut = bandpass
-    if selection is not None:
-        if 'xaxis.range[0]' in selection and 'xaxis.range[1]' in selection:
-            start = selection['xaxis.range[0]']
-            end = selection['xaxis.range[1]']
-            y = read_wave_part_from_s3(S3_BUCKET, path=url, fs=SAMPLING_RATE, start=start, end=end)
-            y = y / y.max()
-        else:
-            raise PreventUpdate
-    else:
-        fs, y = read_wave_local('uploads/' + url)
-        start = 0
-        end = len(y) / fs
-
-    y = filters.frequency_filter(y, fs=SAMPLING_RATE, lowcut=lowcut, highcut=higcut)
-    fig = visualize.waveform_shaded(y, fs=SAMPLING_RATE, start=start, end=end)
-    return fig
+#     y = filters.frequency_filter(y, fs=SAMPLING_RATE, lowcut=lowcut, highcut=higcut)
+#     fig = visualize.waveform_shaded(y, fs=SAMPLING_RATE, start=start, end=end)
+#     return fig
 
 
 def generate_layout():

@@ -106,3 +106,8 @@ def read_wav_parts_from_local(path: str, onsets: list, dtype = 'int16'):
             wavs.append(wav_array)
 
     return wavs
+
+
+def save_wav(y: np.ndarray, fs: int, path: str):
+    y = y * (2 ** 15 - 1)
+    wavfile.write(path, fs, y.astype('int16'))
