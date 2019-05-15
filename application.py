@@ -47,7 +47,7 @@ from audioexplorer import filters
 app = dash.Dash(__name__, external_stylesheets=['https://codepen.io/chriddyp/pen/bWLwgP.css',
                                                 "https://codepen.io/chriddyp/pen/brPBPO.css"])
 app.config['suppress_callback_exceptions']=True
-dash_upload_components.decorate_server(app.server, "uploads")
+dash_upload_components.decorate_server(app.server, TEMP_STORAGE)
 application = app.server
 
 with open('docs/app_description.md', 'r') as file:
@@ -313,7 +313,7 @@ def show_extra_options(value):
 def create_file_key_mapping(filenames):
     if filenames is not None:
         user_ip = get_user_ip()
-        filepath = 'uploads/' + filenames[-1]
+        filepath = TEMP_STORAGE + filenames[-1]
         time_now = datetime.now().strftime("%Y-%m-%d_%H:%M:%S")
         filename, ext = os.path.splitext(os.path.basename(filepath))
         key = f'{filename}_{time_now}_{user_ip}.wav'
@@ -325,7 +325,7 @@ def create_file_key_mapping(filenames):
 @app.callback(Output('filename-store', 'data'),
               [Input('mapping-store', 'data')])
 def convert(mapping):
-    audio_io.convert_to_wav(input_path=mapping['filepath'], output_path='uploads/' + mapping['key'])
+    audio_io.convert_to_wav(input_path=mapping['filepath'], output_path=TEMP_STORAGE + mapping['key'])
     return mapping['key']
 
 
@@ -368,7 +368,7 @@ def log_user_action_cb(mapping, apply_clicks, embedding_type, fftsize, bandpass,
               [Input('filename-store', 'data')])
 def upload_to_s3(filename):
     if filename is not None:
-        filepath = 'uploads/' + filename
+        filepath = TEMP_STORAGE + filename
         copy_file_to_bucket(filepath, filename)
         url = generate_signed_url(filename)
         return url
