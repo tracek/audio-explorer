@@ -44,7 +44,7 @@ class FeatureExtractor(object):
         if not any_yaafe_feature:
             self.yaafe = None
         else:
-            self.yaafe = YaafeWrapper(fs, block_size, step_size)
+            self.yaafe = YaafeWrapper(fs, block_size, step_size, selected_features=any_yaafe_feature)
 
 
     def get_features(self, sample: np.ndarray) -> pd.DataFrame:

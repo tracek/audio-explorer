@@ -78,6 +78,8 @@ class YaafeWrapper(object):
                 flat_dict[f'{prefix}_{name}'] = values.mean()
             else:
                 d = {f'{prefix}_{name}.{idx}': value for idx, value in enumerate(list(values.mean(axis=0)))}
+                if name == 'Chroma':
+                    d = {key: 10*np.log10(val) for key, val in d.items()}
                 flat_dict.update(d)
         return flat_dict
 
