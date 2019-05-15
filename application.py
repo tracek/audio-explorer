@@ -36,7 +36,7 @@ from dash.dependencies import Input, Output, State
 from dash.exceptions import PreventUpdate
 from botocore.client import Config
 
-from settings import S3_BUCKET, AWS_REGION, SERVE_LOCAL, SAMPLING_RATE, AUDIO_MARGIN
+from settings import S3_BUCKET, AWS_REGION, SERVE_LOCAL, SAMPLING_RATE, AUDIO_MARGIN, TEMP_STORAGE
 from audioexplorer.features import get, FEATURES
 from audioexplorer.embedding import get_embeddings, EMBEDDINGS
 from audioexplorer import audio_io
@@ -391,7 +391,7 @@ def upload_to_s3(filename):
 def plot_embeddings(filename, n_clicks, embedding_type, fftsize, bandpass, onset_threshold, sample_len,
                     neighbours, selected_features):
     if filename is not None:
-        filepath = 'uploads/' + filename
+        filepath = TEMP_STORAGE + filename
         lowpass, highpass = bandpass
         min_duration = sample_len - 0.05
         fs, X = audio_io.read_wave_local(filepath)
@@ -469,10 +469,10 @@ def display_click_image(click_data, select_data, n_clicks, url, bandpass):
         else:
             if select_data is not None:
                 onsets = [point['customdata'] for point in select_data['points']]
-                wavs = audio_io.read_wav_parts_from_local(path='uploads/' + url, onsets=onsets)
+                wavs = audio_io.read_wav_parts_from_local(path=TEMP_STORAGE + url, onsets=onsets)
                 wavs = np.concatenate(wavs)
             else:
-                fs, wavs = audio_io.read_wave_local('uploads/' + url)
+                fs, wavs = audio_io.read_wave_local(TEMP_STORAGE + url)
 
             lowcut, higcut = bandpass
             wavs = filters.frequency_filter(wavs, fs=SAMPLING_RATE, lowcut=lowcut, highcut=higcut)
@@ -515,7 +515,7 @@ def full_spectrogram_graph(select_data, url, selection, n_clicks, bandpass, feat
             time = np.load(time_path)
             fig = visualize.spectrogram_shaded(S=Sxx, time=time, fs=SAMPLING_RATE)
         else:
-            fs, y = audio_io.read_wave_local('uploads/' + url)
+            fs, y = audio_io.read_wave_local(TEMP_STORAGE + url)
             lowcut, higcut = bandpass
             y = filters.frequency_filter(y, fs=SAMPLING_RATE, lowcut=lowcut, highcut=higcut)
             freq, time, Sxx = visualize.calculate_spectrogram(y, fs, backend='yaafe')
@@ -544,12 +544,12 @@ def update_table(select_data):
 )
 def reduce_noise(click, url, select_data):
     if url is not None and select_data is not None:
-        fs, y = audio_io.read_wave_local('uploads/' + url)
+        fs, y = audio_io.read_wave_local(TEMP_STORAGE + url)
         onsets = [point['customdata'] for point in select_data['points']]
         noises = [y[int(start_s * fs): int(end_s * fs)] for start_s, end_s in onsets]
         noises = np.concatenate(noises)
         y = nr.reduce_noise(audio_clip=y, noise_clip=noises)
-        audio_io.save_wav(y, fs, path='uploads/' + url)
+        audio_io.save_wav(y, fs, path=TEMP_STORAGE + url)
         return 1
 
 
@@ -571,7 +571,7 @@ def reduce_noise(click, url, select_data):
 #         else:
 #             raise PreventUpdate
 #     else:
-#         fs, y = read_wave_local('uploads/' + url)
+#         fs, y = read_wave_local(TEMP_STORAGE + url)
 #         start = 0
 #         end = len(y) / fs
 #
