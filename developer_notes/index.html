@@ -429,10 +429,12 @@
 <p>The web app is hosted on AWS. It scales to up to 3 instances and uses <code>nginx</code> load balancer. The traffic is secured and managed though Route 53. AWS provides a certificate too. The code repository contains complete load balancer configuration required to run the app in the wild. </p>
 <p>Elastic Beanstalk automatically handles the details of capacity provisioning, load balancing, scaling, and application health monitoring.</p>
 <h2 id="set-up-development-environment">Set up development environment</h2>
-<p>To set up your development environment, run the following commands:
-1. Fork and clone the Audio Explorer <a href="https://github.com/tracek/audio-explorer">repo</a>.
-2. Move into the clone: <code>cd audio-explorer</code>.
-3. Create Anaconda environment: <code>conda env create -f environment.yml</code>.</p>
+<p>To set up your development environment, run the following commands:</p>
+<ol>
+<li>Fork and clone the Audio Explorer <a href="https://github.com/tracek/audio-explorer">repo</a>.</li>
+<li>Move into the clone: <code>cd audio-explorer</code>.</li>
+<li>Create Anaconda environment: <code>conda env create -f environment.yml</code>.</li>
+</ol>
 <h4 id="todo">TODO</h4>
 <p>Currently Audio Explorer uploads every upload to my S3. We need a local mode that will allow anyone to easily experiment and develop the code.</p>
 <h2 id="pull-request-guidelines">Pull Request Guidelines</h2>

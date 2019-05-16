@@ -401,31 +401,35 @@
                 
                 <h1 id="audio-embedding">Audio embedding</h1>
 <h2 id="audio-features">Audio features</h2>
-<p>Given audio fragment, thee following features are computed:
-* Frequency statistics: mean, median, first, third and inter quartile 
-* Pitch statistics: mean, median, first, third and inter quartile
-* <a href="https://en.wikipedia.org/wiki/Chroma_feature">Chroma</a>: short-term pitch profile 
-* Linear Predictor Coefficients (<a href="https://en.wikipedia.org/wiki/Linear_predictive_coding">LPC</a>)
-* Line Spectral Frequency (<a href="https://en.wikipedia.org/wiki/Line_spectral_pairs">LSF</a>) coefficients 
-* Mel-Frequency Cepstral Coefficients (<a href="https://en.wikipedia.org/wiki/Mel-frequency_cepstrum">MFCC</a>)
-* Octave Band Signal Intensity (OBSI)
-* <a href="https://en.wikipedia.org/wiki/Crest_factor">Spectral crest factor per band</a>
-* Decrease: average spectral slope
-* Flatness: spectral flatness using the ratio between geometric and arithmetic mean
-* Flux: flux of spectrum between consecutives frames
-* Rolloff: frequency so that 99% of the energy is contained below
-* Variation: normalized correlation of spectrum between consecutive frames</p>
+<p>Given audio fragment, thee following features are computed:</p>
+<ul>
+<li>Frequency statistics: mean, median, first, third and inter quartile </li>
+<li>Pitch statistics: mean, median, first, third and inter quartile</li>
+<li><a href="https://en.wikipedia.org/wiki/Chroma_feature">Chroma</a>: short-term pitch profile </li>
+<li>Linear Predictor Coefficients (<a href="https://en.wikipedia.org/wiki/Linear_predictive_coding">LPC</a>)</li>
+<li>Line Spectral Frequency (<a href="https://en.wikipedia.org/wiki/Line_spectral_pairs">LSF</a>) coefficients </li>
+<li>Mel-Frequency Cepstral Coefficients (<a href="https://en.wikipedia.org/wiki/Mel-frequency_cepstrum">MFCC</a>)</li>
+<li>Octave Band Signal Intensity (OBSI)</li>
+<li><a href="https://en.wikipedia.org/wiki/Crest_factor">Spectral crest factor per band</a></li>
+<li>Decrease: average spectral slope</li>
+<li>Flatness: spectral flatness using the ratio between geometric and arithmetic mean</li>
+<li>Flux: flux of spectrum between consecutives frames</li>
+<li>Rolloff: frequency so that 99% of the energy is contained below</li>
+<li>Variation: normalized correlation of spectrum between consecutive frames</li>
+</ul>
 <h2 id="dimensionality-reduction">Dimensionality reduction</h2>
-<p>Dimensionality reduction techniques reduce number of variables by projecting them to a lower-dimensional space. The aim in our case is to retain as much as possible of original information, while enjoying exploration of the data in much in familiar 2D space. We're looking at following methods:
-* <a href="https://arxiv.org/pdf/1802.03426">Uniform Manifold Approximation and Projection</a>
-* <a href="https://en.wikipedia.org/wiki/T-distributed_stochastic_neighbor_embedding">t-Distributed Stochastic Neighbor embedding</a>
-* <a href="https://en.wikipedia.org/wiki/Principal_component_analysis">Principal Component Analysis</a>
-* <a href="https://en.wikipedia.org/wiki/Kernel_principal_component_analysis">Kernel Principal Component Analysis</a>
-* <a href="https://en.wikipedia.org/wiki/Factor_analysis">Factor Analysis</a>
-* <a href="https://en.wikipedia.org/wiki/Independent_component_analysis">Independent Component Analysis</a>
-* <a href="https://en.wikipedia.org/wiki/Isomap">Isomap: Isometric Mapping</a>
-* <a href="https://en.wikipedia.org/wiki/Spectral_clustering">Spectral embedding</a>
-* <a href="https://cs.nyu.edu/~roweis/lle/papers/lleintro.pdf">Locally Linear Embedding</a></p>
+<p>Dimensionality reduction techniques reduce number of variables by projecting them to a lower-dimensional space. The aim in our case is to retain as much as possible of original information, while enjoying exploration of the data in much in familiar 2D space. We're looking at following methods:</p>
+<ul>
+<li><a href="https://arxiv.org/pdf/1802.03426">Uniform Manifold Approximation and Projection</a></li>
+<li><a href="https://en.wikipedia.org/wiki/T-distributed_stochastic_neighbor_embedding">t-Distributed Stochastic Neighbor embedding</a></li>
+<li><a href="https://en.wikipedia.org/wiki/Principal_component_analysis">Principal Component Analysis</a></li>
+<li><a href="https://en.wikipedia.org/wiki/Kernel_principal_component_analysis">Kernel Principal Component Analysis</a></li>
+<li><a href="https://en.wikipedia.org/wiki/Factor_analysis">Factor Analysis</a></li>
+<li><a href="https://en.wikipedia.org/wiki/Independent_component_analysis">Independent Component Analysis</a></li>
+<li><a href="https://en.wikipedia.org/wiki/Isomap">Isomap: Isometric Mapping</a></li>
+<li><a href="https://en.wikipedia.org/wiki/Spectral_clustering">Spectral embedding</a></li>
+<li><a href="https://cs.nyu.edu/~roweis/lle/papers/lleintro.pdf">Locally Linear Embedding</a></li>
+</ul>
                 
                   
                 
