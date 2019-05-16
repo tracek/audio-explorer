@@ -16,5 +16,8 @@ The program computes audio features per short fragments of submitted audio piece
 ## Acknowledgement
 
 My special thanks to:
+
 * AWS Cloud Credits for Research for supporting the project! Thanks to AWS I could rapidly prototype the models and the app itself. 
 * My colleagues from RSPB who have supplied the audio recordings and supported along the way.
+
+Cheers!

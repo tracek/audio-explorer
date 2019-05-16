@@ -2,6 +2,16 @@
 
 Here I will put detailed walkthrough.
 
+## Explore
+
+Explanation of app sections.
+
+### What am I looking at?
+The scatter plot is the result of running the dimensionality reduction algorithms on audio recordings resulting in a 2D visualization of the dataset. Each data point is a short sample retrieved from audio. 
+
+### Spectrogram
+A spectrogram is a visual representation of the spectrum of frequencies of a signal as it varies with time. For each selected sample in the graph we plot spectogram of the respective audio. It allows further verification of similarity between samples as well as provide insights into frequency structure of the signal.
+
 ## Worflow example
 
 1. Tune the algorithm parameters or accept the defaults. 
