@@ -1,11 +1,5 @@
 # Contributing to Audio Explorer
 
-Audio Explorer is and will remain open source - that's a promise. I might want to relicence it in future to e.g. MIT if it turns out it fits better open source or conservation science community.
-
-> The GNU GPL does not give users permission to attach other licenses to the program. But the copyright holder for a program can release it under several different licenses in parallel... If you are the copyright holder for the code, you can release it under various different non-exclusive licenses at various times.
-
-Once you contribute to the code, I'd need to get your written permission to relicence the code. If for any reason you'd be unreachable or unhappy with, say, MIT licence, I'd have to try to disentangle your contribution from the code base, causing severe overhead. For this reason, I will kindly ask to assign the copyright to the project. For further explanation, see [this answer on Stack Exchange](https://opensource.stackexchange.com/questions/5796/projects-which-require-copyright-assignment-from-contributors).
-
 ## Getting Started
 
 To set up your development environment, run the following commands:
