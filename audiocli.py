@@ -121,11 +121,12 @@ def process_path(input_path, extractor_config, output_path, hdf_format, multi, j
 
 
 @cli.command('f2m', help='Features to embedding model')
-@click.option("--input", "-in", type=click.STRING, help="Path to h5 features.", required=True)
-@click.option("--output", "-out", type=click.STRING, help="Output directory.")
-@click.option("--jobs", "-j", type=click.INT, default=-1, help="Number of jobs to run", show_default=True)
+@click.option("--input", "-in", type=click.STRING, help='Path to h5 features', required=True)
+@click.option("--output", "-out", type=click.STRING, help='Output directory')
+@click.option("--jobs", "-j", type=click.INT, default=-1, help='Number of jobs to run', show_default=True)
 @click.option("--algo", "-a", type=click.Choice(list(embedding.EMBEDDINGS.keys()), case_sensitive=False), default='umap', help='Embedding to use')
 @click.option("--grid", "-p", type=click.Path(exists=True), help="JSON with grid search parameters for the embedding algo")
+@click.option("--features", "-f", type=click.STRING, help="Selected features")
 def h5_to_embedding(input, output, jobs, algo, grid):
     if os.path.isfile(input):
         hdf_store = pd.HDFStore(input)

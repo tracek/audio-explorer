@@ -34,13 +34,14 @@ class FeatureExtractor(object):
     def __init__(self, fs: int, block_size: int=1024, step_size: int=None, selected_features='all'):
         self.fs = fs
         self.block_size = block_size
-        self.selected_features = selected_features
+        if selected_features == 'all':
+            self.selected_features = list(FEATURES.keys())
+        else:
+            self.selected_features = selected_features
         if not step_size:
             self.step_size = block_size // 2
-        if selected_features == 'all':
-            selected_features = list(FEATURES.keys())
 
-        any_yaafe_feature = set(selected_features) & set(YAAFE_FEATURES.keys())
+        any_yaafe_feature = set(self.selected_features) & set(YAAFE_FEATURES.keys())
         if not any_yaafe_feature:
             self.yaafe = None
         else:
