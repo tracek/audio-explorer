@@ -1,6 +1,6 @@
 # Getting started
 
-Here I will put detailed walkthrough.
+TODO - detailed walkthrough
 
 ## Explore
 
