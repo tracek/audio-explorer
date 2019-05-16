@@ -3,6 +3,7 @@
 ## Audio features
 
 Given audio fragment, thee following features are computed:
+
 * Frequency statistics: mean, median, first, third and inter quartile 
 * Pitch statistics: mean, median, first, third and inter quartile
 * [Chroma](https://en.wikipedia.org/wiki/Chroma_feature): short-term pitch profile 
@@ -19,6 +20,7 @@ Given audio fragment, thee following features are computed:
 
 ## Dimensionality reduction
 Dimensionality reduction techniques reduce number of variables by projecting them to a lower-dimensional space. The aim in our case is to retain as much as possible of original information, while enjoying exploration of the data in much in familiar 2D space. We're looking at following methods:
+
 * [Uniform Manifold Approximation and Projection](https://arxiv.org/pdf/1802.03426)
 * [t-Distributed Stochastic Neighbor embedding](https://en.wikipedia.org/wiki/T-distributed_stochastic_neighbor_embedding)
 * [Principal Component Analysis](https://en.wikipedia.org/wiki/Principal_component_analysis)

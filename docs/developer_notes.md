@@ -7,6 +7,7 @@ Elastic Beanstalk automatically handles the details of capacity provisioning, lo
 ## Set up development environment
 
 To set up your development environment, run the following commands:
+
 1. Fork and clone the Audio Explorer [repo](https://github.com/tracek/audio-explorer).
 2. Move into the clone: `cd audio-explorer`.
 3. Create Anaconda environment: `conda env create -f environment.yml`.
