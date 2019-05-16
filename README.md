@@ -42,9 +42,11 @@ We take the multidimensional space of computed audio features and project it to 
 4. Click a point on the graph to hear the audio and see the spectrogram. Mind that what you hear and see is longer than selected `Sample length` by `0.4s`. `0.2s` margin is added to the beginning and end to get better impression of the sound surrounding.  
 5. Calculated audio features can be inspected, sorted and filtered through custom-made query language by selecting _Table_ tab. You can use the following expressions: `<=`, `<`, `>=` and `>`, e.g. `> 2000`.
 6. Use *Lasso select* (top right menu that appears after hovering over the graph) to select interesting cluster. The selection will be reflected in *Table*.
-7. Download the selection from *Table*.
+7. For the selected audio fragments a power spectrum will be plotted (units: Voltage<sup>2</sup>), scaled to dB.
+8. Now that we have frequencies present in the selected fragments, user can decide to reduce presence of these frequencies in rest of the audio.  
+9. Once you're happy with the selection, you can download the data from *Table*.
 
-There will be more to enable user to label samples and clean from the noise. Coming soon!
+
 
 ## Details
 
