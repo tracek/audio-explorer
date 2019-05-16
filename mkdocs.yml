@@ -1,6 +1,10 @@
-site_name: Audio Explorer
+site_name: 'Audio Explorer'
+site_description: 'Documentation for Audio Explorer'
+site_author: 'Lukasz Tracewski'
+site_url: 'https://tracek.github.io/audio-explorer/'
 theme:
   name: 'material'
+  favicon: 'img/favicon.ico'
 nav:
   - Home: index.md
   - getting_started.md
@@ -8,3 +12,11 @@ nav:
   - command_line.md
   - developer_notes.md
   - about.md
+repo_name: 'tracek/audio-explorer'
+repo_url: 'https://github.com/tracek/audio-explorer'
+extra:
+  social:
+    - type: 'github'
+      link: 'https://github.com/tracek'
+    - type: 'linkedin'
+      link: 'https://linkedin.com/in/lukasztracewski'
