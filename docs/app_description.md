@@ -10,7 +10,7 @@ The program computes audio features per short fragments of submitted audio piece
 
 Manual labelling of audio is time consuming and error prone. With this tool we aim to augment user by allowing to easily navigate recordings and label selected audio pieces. Instead of looking at raw audio, we extract number of audio features from each sample. The latter typically consists of dozens of calculated values (features), which would be impossible to visualise (e.g. 20 features per sample effectively means 20-dimensional space). Audio Explorer allows to compute over 100 features per audio fragment.
 
-### Worflow example
+### Worflow 
 
 1. Tune the algorithm parameters or accept the defaults. 
 2. Upload an audio file you want to analyse. If you don't have anything at hand, [here](https://s3.eu-central-1.amazonaws.com/audioexplorer-public/sthelena_example.mp3) is an audio that contains some bird calls, primarily storm petrels, recorded on St. Helena. Can you spot bird calls on the scatter plot? To download the recording, right-click on the link and select "save link as..." and then *Upload* it. Audio Explorer works with majority of popular audio formats, all thanks to [sox](http://sox.sourceforge.net).
@@ -44,7 +44,7 @@ Given audio fragment, we compute the following features:
 
 
 ### How do we solve the problem?
-We take the multidimensional space of computed audio features and project it to two dimensions, while retaining most of the information that describes the sample. That means that audio pieces that sound similar will be packed closely together, while those that sound quite different should be far apart. User can select cluster of similar-sounding samples and mark them.
+We take the multidimensional space of computed audio features and project it to two dimensions, while retaining most of the information that describes the sample. Audio pieces that sound similar will be packed closely together, while those that sound quite different should be far apart. User can select cluster of similar-sounding samples and mark them.
 
 ### What am I looking at?
 The scatter plot is the result of running the dimensionality reduction algorithms on audio recordings resulting in a 2D visualization of the dataset. Each data point is a short sample retrieved from audio. 
@@ -62,15 +62,8 @@ Dimensionality reduction techniques reduce number of variables by projecting the
 * [Spectral embedding](https://en.wikipedia.org/wiki/Spectral_clustering)
 * [Locally Linear Embedding](https://cs.nyu.edu/~roweis/lle/papers/lleintro.pdf)
 
-**Which algorithm to select?** Give a shot with Uniform Manifold Approximation and Projection.
-
 
 #### Spectrogram
 A spectrogram is a visual representation of the spectrum of frequencies of a signal as it varies with time. For each selected sample in the graph we plot spectogram of the respective audio. It allows further verification of similarity between samples as well as provide insights into frequency structure of the signal.
  
 
-### How to use the app
-1. Select algorithm parameters. Consider if the program should detect onsets of audio or consider all chunks.
-2. Upload the audio. Once completed, selected algorithm will find a projection to 2d space.
-3. Inspect the clusters. Play audio for various samples to see how they are grouped together.
-4. ... TODO

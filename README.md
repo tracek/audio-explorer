@@ -31,8 +31,7 @@ Manual labelling of audio is time consuming and error prone. With this tool we a
 The main driver behind creation of this software were problems I faced when developing an algorithm to classify bird calls for the [Royal Society for the Protection of Birds](https://www.rspb.org.uk/). Accurate species classification is needed to estimate (change in) population size and therefore crucial for biodiversity monitoring.
 
 #### How do we solve the problem?
-
-We take the multidimensional space of computed audio features and project it to two dimensions, while retaining most of the information that describes the sample. That means that audio pieces that sound similar will be packed closely together, while those that sound quite different should be far apart. User can select cluster of similar-sounding samples and mark them.
+We take the multidimensional space of computed audio features and project it to two dimensions, while retaining most of the information that describes the sample. Audio pieces that sound similar will be packed closely together, while those that sound quite different should be far apart. User can select cluster of similar-sounding samples and mark them.
 
 ## Worflow example
 
