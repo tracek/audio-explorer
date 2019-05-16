@@ -2,9 +2,9 @@ site_name: Audio Explorer
 theme:
   name: 'material'
 nav:
-    - Home: index.md
-    - about.md
-    - getting_started.md
-    - audio_embedding.md
-    - command_line.md
-    - developer_notes.md
+  - Home: index.md
+  - getting_started.md
+  - audio_embedding.md
+  - command_line.md
+  - developer_notes.md
+  - about.md
