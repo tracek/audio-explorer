@@ -1,32 +1,32 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
     <url>
-     <loc>None</loc>
+     <loc>https://tracek.github.io/audio-explorer/</loc>
      <lastmod>2019-05-16</lastmod>
      <changefreq>daily</changefreq>
     </url>
     <url>
-     <loc>None</loc>
+     <loc>https://tracek.github.io/audio-explorer/getting_started/</loc>
      <lastmod>2019-05-16</lastmod>
      <changefreq>daily</changefreq>
     </url>
     <url>
-     <loc>None</loc>
+     <loc>https://tracek.github.io/audio-explorer/audio_embedding/</loc>
      <lastmod>2019-05-16</lastmod>
      <changefreq>daily</changefreq>
     </url>
     <url>
-     <loc>None</loc>
+     <loc>https://tracek.github.io/audio-explorer/command_line/</loc>
      <lastmod>2019-05-16</lastmod>
      <changefreq>daily</changefreq>
     </url>
     <url>
-     <loc>None</loc>
+     <loc>https://tracek.github.io/audio-explorer/developer_notes/</loc>
      <lastmod>2019-05-16</lastmod>
      <changefreq>daily</changefreq>
     </url>
     <url>
-     <loc>None</loc>
+     <loc>https://tracek.github.io/audio-explorer/about/</loc>
      <lastmod>2019-05-16</lastmod>
      <changefreq>daily</changefreq>
     </url>
