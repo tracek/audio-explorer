@@ -439,7 +439,7 @@ Options:
 </code></pre>
 
 <p>Example:</p>
-<pre><code class="bash">python audiocli.py a2f --input /mnt/data/stormpetrels/ --output /mnt/data/h --config audioexplorer/algo_config.ini --format table --multi
+<pre><code class="bash">./audiocli.py a2f --input data/raw/storm_petrels_16k/ --output data/features/features_02s/ --jobs 4 --config audioexplorer/algo_config.ini --multi --format table
 </code></pre>
 
 <p>The program loads complete file into memory, so watch out for memory usage </p>
@@ -457,6 +457,10 @@ Options:
   -p, --grid PATH                 JSON with grid search parameters for the
                                   embedding algo
   --help                          Show this message and exit.
+</code></pre>
+
+<p>Example:</p>
+<pre><code class="bash">audiocli.py f2m --input data/features/features_02s/ --output data/models/ --jobs 6 --algo umap --grid data/umap_grid.json --select freq
 </code></pre>
                 
                   

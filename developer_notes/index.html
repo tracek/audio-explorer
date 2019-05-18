@@ -314,6 +314,35 @@
     Set up development environment
   </a>
   
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#documentation" title="Documentation" class="md-nav__link">
+    Documentation
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#deployment" title="Deployment" class="md-nav__link">
+    Deployment
+  </a>
+  
+    <nav class="md-nav">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#elastic-beanstalk" title="Elastic Beanstalk" class="md-nav__link">
+    Elastic Beanstalk
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#docker" title="Docker" class="md-nav__link">
+    Docker
+  </a>
+  
     <nav class="md-nav">
       <ul class="md-nav__list">
         
@@ -321,6 +350,11 @@
   <a href="#todo" title="TODO" class="md-nav__link">
     TODO
   </a>
+  
+</li>
+        
+      </ul>
+    </nav>
   
 </li>
         
@@ -384,6 +418,35 @@
     Set up development environment
   </a>
   
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#documentation" title="Documentation" class="md-nav__link">
+    Documentation
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#deployment" title="Deployment" class="md-nav__link">
+    Deployment
+  </a>
+  
+    <nav class="md-nav">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#elastic-beanstalk" title="Elastic Beanstalk" class="md-nav__link">
+    Elastic Beanstalk
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#docker" title="Docker" class="md-nav__link">
+    Docker
+  </a>
+  
     <nav class="md-nav">
       <ul class="md-nav__list">
         
@@ -391,6 +454,11 @@
   <a href="#todo" title="TODO" class="md-nav__link">
     TODO
   </a>
+  
+</li>
+        
+      </ul>
+    </nav>
   
 </li>
         
@@ -435,6 +503,25 @@
 <li>Move into the clone: <code>cd audio-explorer</code>.</li>
 <li>Create Anaconda environment: <code>conda env create -f environment.yml</code>.</li>
 </ol>
+<h2 id="documentation">Documentation</h2>
+<p>Build docs: <code>mkdocs build</code></p>
+<p>Deploy docs to GitHub: <code>mkdocs gh-deploy</code></p>
+<h2 id="deployment">Deployment</h2>
+<h3 id="elastic-beanstalk">Elastic Beanstalk</h3>
+<p>Install AWS CLI for EB: <code>pip install awsebcli</code></p>
+<p>Prcedure:</p>
+<ol>
+<li>Initialise the environment: <code>eb init</code></li>
+<li>Create and deploy new instance of type: <code>eb create -i [type]</code></li>
+<li>Deploy <code>eb deploy</code>. Hit it to deliver every new chunk.</li>
+</ol>
+<p>SSH to the machine on Elastic Beanstalk: <code>eb ssh</code></p>
+<h3 id="docker">Docker</h3>
+<p>Build docker image: <code>docker image build [path] user/name:latest</code></p>
+<p>Example:</p>
+<pre><code>docker build -t tracek/audio-explorer:latest -t tracek/audio-explorer:0.1 .
+</code></pre>
+<p>SSH to the container: <code>sudo docker exec -it [container id] /bin/bash</code></p>
 <h4 id="todo">TODO</h4>
 <p>Currently Audio Explorer uploads every upload to my S3. We need a local mode that will allow anyone to easily experiment and develop the code.</p>
 <h2 id="pull-request-guidelines">Pull Request Guidelines</h2>
