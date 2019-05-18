@@ -232,7 +232,7 @@ def show_features_in_table(data):
 def update_table(data, select_data, pagination_settings, sorting_settings, filtering_settings):
     filtering_expressions = filtering_settings.split(' && ')
     df = pd.DataFrame(data)
-    if select_data and event_triggered('embedding-graph.clickData'):
+    if select_data:
         selected_points = [point['pointIndex'] for point in select_data['points']]
         df = df.loc[selected_points]
     for filter_expression in filtering_expressions:
