@@ -1,6 +1,12 @@
 # Developer notes
 
-The web app is hosted on AWS. It scales to up to 3 instances and uses `nginx` load balancer. The traffic is secured and managed though Route 53. AWS provides a certificate too. The code repository contains complete load balancer configuration required to run the app in the wild. 
+The web app is hosted on AWS and uses following components:
+* Elastic Beanstalk with Application Load Balancer: orchestration
+* S3: storage
+* Route 53: DNS service
+* Relational Database Service (RDS) with postgresql
+* Secrets Manager: protect secrets (plotly, ipinfo)
+
 
 Elastic Beanstalk automatically handles the details of capacity provisioning, load balancing, scaling, and application health monitoring.
 
@@ -12,9 +18,46 @@ To set up your development environment, run the following commands:
 2. Move into the clone: `cd audio-explorer`.
 3. Create Anaconda environment: `conda env create -f environment.yml`.
 
-#### TODO
+## Documentation
 
-Currently Audio Explorer uploads every upload to my S3. We need a local mode that will allow anyone to easily experiment and develop the code.
+Build docs: `mkdocs build`
+
+Deploy docs to GitHub: `mkdocs gh-deploy`
+
+## Deployment
+
+### Elastic Beanstalk
+
+Install AWS CLI for EB: `pip install awsebcli`
+
+Prcedure:
+
+1. Initialise the environment: `eb init`
+2. Create and deploy new instance of type: `eb create -i [type]`
+3. Deploy `eb deploy`. Hit it to deliver every new chunk.
+
+SSH to the machine on Elastic Beanstalk: `eb ssh`
+
+
+### Docker
+
+Build docker image: `docker image build [path] user/name:latest`
+
+Example:
+
+    docker build -t tracek/audio-explorer:latest -t tracek/audio-explorer:0.1 .
+    
+SSH to the container: `sudo docker exec -it [container id] /bin/bash`
+
+
+## **Troubleshooting**
+
+Problem: Elastic Beanstalk deployment via Docker fails due thin pool getting full.
+
+Solution:
+
+- Use EC2 that has a drive with sufficient space (mind most of EC2 uses EBS volumes)
+- Follow instructions from [Server Fault](https://serverfault.com/questions/840937/aws-elasticbeanstalk-docker-thin-pool-getting-full-and-causing-re-mount-of-files)
 
 ## Pull Request Guidelines
 

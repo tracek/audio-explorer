@@ -45,7 +45,7 @@ Options:
 
 Example:
 ```bash
-python audiocli.py a2f --input /mnt/data/stormpetrels/ --output /mnt/data/h --config audioexplorer/algo_config.ini --format table --multi
+./audiocli.py a2f --input data/raw/storm_petrels_16k/ --output data/features/features_02s/ --jobs 4 --config audioexplorer/algo_config.ini --multi --format table
 ```
 
 The program loads complete file into memory, so watch out for memory usage 
@@ -66,4 +66,10 @@ Options:
   -p, --grid PATH                 JSON with grid search parameters for the
                                   embedding algo
   --help                          Show this message and exit.
+```
+
+Example:
+
+```bash
+audiocli.py f2m --input data/features/features_02s/ --output data/models/ --jobs 6 --algo umap --grid data/umap_grid.json --select freq
 ```
