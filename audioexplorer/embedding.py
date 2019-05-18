@@ -113,13 +113,13 @@ def get_embeddings(data: Union[np.ndarray, pd.DataFrame] , type: str='umap', n_j
         # moving umap here for the time being
         import umap
         n_neighbors = kwargs.get('n_neighbors')
-        if data.shape[0] < n_neighbors:
-            raise EmbeddingException(f'The input data consisted of {data.shape[0]} points. Reduce clustering strength to '
-                                     f'at most {data.shape[0] - 1}, preferably less than {data.shape[0] // 2}.')
-        if data.shape[0] < (4 * n_neighbors):
+        if n_neighbors and data.shape[0] < n_neighbors:
+            raise EmbeddingException(f'The input data consisted of {data.shape[0]} points. Reduce n_neighbors to '
+                                     f'at most {data.shape[0] - 1}, preferably less than {data.shape[0] // 4}.')
+        if n_neighbors and data.shape[0] < (4 * n_neighbors):
             warning_msg = f'Number of neighbours to consider ({n_neighbors}) is very large when compared to number of ' \
                 f'data points ({data.shape[0]}). Consider lowering number of neighbours to less than 1/4th, e.g. ' \
-                f'{data.shape[0] // 4 -1}.'
+                f'{data.shape[0] // 4 - 1}.'
         algo = umap.UMAP(n_components=2, transform_seed=random_state, **kwargs)
     elif type == 'tsne':
         kwargs['perplexity'] = kwargs.get('perplexity', 50)

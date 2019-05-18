@@ -18,6 +18,7 @@
 #      along with Audio Explorer.  If not, see <https://www.gnu.org/licenses/>.
 
 import os
+import re
 import sys
 import shutil
 import glob
@@ -77,7 +78,7 @@ def process(input, output, jobs, config, multi, format):
     if multi:
         Parallel(n_jobs=jobs, backend='multiprocessing')(delayed(process_path)(
             input_path=wav_path,
-            extractor_config=extractor_config['DEFAULT'],
+            config=extractor_config,
             output_path=output,
             hdf_format=format,
             multi=multi,
@@ -88,7 +89,7 @@ def process(input, output, jobs, config, multi, format):
             sys.exit(1)
         for wav_path in audio_files:
             process_path(input_path=wav_path,
-                         extractor_config=extractor_config['DEFAULT'],
+                         config=extractor_config,
                          output_path=output,
                          hdf_format=format,
                          multi=multi,
@@ -96,19 +97,47 @@ def process(input, output, jobs, config, multi, format):
     logging.info(f'Completed processing in {time.time() - start_time:.2f}s')
 
 
-def process_path(input_path, extractor_config, output_path, hdf_format, multi, jobs):
+def process_path(input_path, config, output_path, hdf_format, multi, jobs):
     logging.info(f'Processing {input_path}')
     y, sr = librosa.load(input_path, sr=16000)
     filename_noext = os.path.splitext(os.path.basename(input_path))[0]
     key = filename_noext.replace('-', '_')
 
+    lowcut = config.getint('BANDPASS','lowcut')
+    highcut = config.getint('BANDPASS','highcut')
+    block_size = config.getint('FFT', 'block_size')
+    step_size = config.getint('FFT', 'step_size')
+    onset_detector_type = config.get('ONSET', 'detector_type')
+    onset_threshold = config.getfloat('ONSET', 'threshold')
+    onset_silence_threshold = config.getfloat('ONSET', 'silence_threshold')
+    min_duration_s = config.getfloat('ONSET', 'min_duration_s')
+    sample_len = config.getfloat('ONSET', 'sample_len')
+
     if multi:
         mode = 'w'
-        feats = features.get(y, sr, n_jobs=1, **extractor_config)
+        feats = features.get(y, sr, n_jobs=1,
+                             lowcut=lowcut,
+                             highcut=highcut,
+                             block_size=block_size,
+                             step_size=step_size,
+                             onset_detector_type=onset_detector_type,
+                             onset_threshold=onset_threshold,
+                             onset_silence_threshold=onset_silence_threshold,
+                             min_duration_s=min_duration_s,
+                             sample_len=sample_len)
         output_file = os.path.join(output_path, filename_noext + '.h5')
     else:
         mode = 'a'
-        feats = features.get(y, sr, n_jobs=jobs, **extractor_config)
+        feats = features.get(y, sr, n_jobs=jobs,
+                             lowcut=lowcut,
+                             highcut=highcut,
+                             block_size=block_size,
+                             step_size=step_size,
+                             onset_detector_type=onset_detector_type,
+                             onset_threshold=onset_threshold,
+                             onset_silence_threshold=onset_silence_threshold,
+                             min_duration_s=min_duration_s,
+                             sample_len=sample_len)
         output_file = output_path
 
     if not feats.empty:
@@ -120,32 +149,84 @@ def process_path(input_path, extractor_config, output_path, hdf_format, multi, j
             f.write(input_path + '\n')
 
 
+def read_selected_features_from_hdf(selection, paths: list) -> pd.DataFrame:
+    if selection == 'all':
+        df = [pd.read_hdf(path) for path in paths]
+    else:
+        df = [pd.read_hdf(path, columns=selection) for path in paths]
+    df = pd.concat(df)
+    return df
+
+
+def get_selected_features(selection: str):
+    """
+    Get selected audio features from string or ini file
+    :param selection: string or path to ini file
+    :return: comma-separated features
+    """
+
+    if os.path.isfile(selection):
+        config = configparser.ConfigParser()
+        config.read(selection)
+        selected_features = [feature for feature, enabled in config.items('FEATURES') if enabled.lower() == 'yes']
+    else:
+        available_features = set(features.FEATURES.keys())
+        if selection.lower() == 'all':
+            selected_features = list(available_features)
+        else:
+            selected_features = selection.replace(' ', '').split(',')
+            diff = set(selected_features).difference(available_features)
+            if diff:
+                diff = ', '.join(diff)
+                raise NotImplemented(f'Following features are not available: {diff}')
+    selected_features_fullname = [features.FEATURES[feature] for feature in selected_features]
+    selected_features_fullname = ','.join(selected_features_fullname)
+    logging.info(f'Following features were selected: {selected_features_fullname}')
+
+    return selected_features
+
+
+def feature_selection_to_columns(selection, all_columns):
+    regex = re.compile('|'.join(selection))
+    selected_columns = list(filter(regex.match, all_columns))
+    return selected_columns
+
+
 @cli.command('f2m', help='Features to embedding model')
 @click.option("--input", "-in", type=click.STRING, help='Path to h5 features', required=True)
 @click.option("--output", "-out", type=click.STRING, help='Output directory')
 @click.option("--jobs", "-j", type=click.INT, default=-1, help='Number of jobs to run', show_default=True)
 @click.option("--algo", "-a", type=click.Choice(list(embedding.EMBEDDINGS.keys()), case_sensitive=False), default='umap', help='Embedding to use')
-@click.option("--grid", "-p", type=click.Path(exists=True), help="JSON with grid search parameters for the embedding algo")
-@click.option("--features", "-f", type=click.STRING, help="Selected features")
-def h5_to_embedding(input, output, jobs, algo, grid):
+@click.option("--grid", "-p", type=click.Path(exists=True), help='JSON with grid search parameters for the embedding algo')
+@click.option("--select", "-f", type=click.STRING, default='all', help='Selected features. Available options: SpectralVariation,'
+    'Chroma,SpectralRolloff,SpectralCrestFactorPerBand,pitch,LPC,freq,OBSI,SpectralFlatness,MFCC,SpectralFlux,LSF'
+    'Supply the features names after comma like this: "pitch,LPC". Default (all) takes all features'                                                                   
+    'Check the docs for more info: https://tracek.github.io/audio-explorer/audio_embedding/')
+def h5_to_embedding(input, output, jobs, algo, grid, select: str):
+    select = get_selected_features(selection=select)
     if os.path.isfile(input):
-        hdf_store = pd.HDFStore(input)
-        hdf_keys = hdf_store.keys()
-        hdf_store.close()
-        dfs = [pd.read_hdf(input, key=key) for key in hdf_keys]
-        dfs = pd.concat(dfs)
+        with pd.HDFStore(input) as hdf_store:
+            hdf_keys = hdf_store.keys()
+            columns = hdf_store.get_storer(hdf_keys[0]).non_index_axes[0][1]
+        select = feature_selection_to_columns(selection=select, all_columns=columns)
+        df = read_selected_features_from_hdf(selection=select, paths=hdf_keys)
         if not output:
             output = os.path.splitext(input)[0]
     elif os.path.isdir(input):
         input = os.path.normpath(input)
         h5_features = glob.glob(input + '/*.h5', recursive=False)
-        dfs = [pd.read_hdf(path) for path in h5_features]
-        dfs = pd.concat(dfs)
+        if not h5_features:
+            raise Exception(f'No hdf5 files found in {input}')
+        with pd.HDFStore(h5_features[0]) as hdf_store:
+            key = hdf_store.keys()[0]
+            columns = hdf_store.get_storer(key).non_index_axes[0][1]
+        select = feature_selection_to_columns(selection=select, all_columns=columns)
+        df = read_selected_features_from_hdf(selection=select, paths=h5_features)
         if not output:
             output = input
     else:
         raise Exception(f'Input {input} not recognised as file or directory.')
-    embedding.fit_and_save_with_grid(dfs.values, type=algo, output_dir=output, n_jobs=jobs, grid_path=grid)
+    embedding.fit_and_save_with_grid(df.values, type=algo, output_dir=output, n_jobs=jobs, grid_path=grid)
 
 
 @cli.command('m2e', help='Model to embedddings')
