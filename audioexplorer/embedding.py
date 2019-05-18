@@ -72,6 +72,7 @@ def fit_and_save(data: Union[np.ndarray, pd.DataFrame], output_dir: str, type: s
     logging.info(f'Running {type} with {params_string}')
     embedding = get_embeddings(data=data, type=type, n_jobs=n_jobs, **kwargs)
     output_path = os.path.join(output_dir, type + '_' + params_string + '.joblib')
+    logging.info(f'Model built successfully. Saving model to {output_path}...')
     joblib.dump(embedding, filename=output_path)
 
 
@@ -120,6 +121,7 @@ def get_embeddings(data: Union[np.ndarray, pd.DataFrame] , type: str='umap', n_j
             warning_msg = f'Number of neighbours to consider ({n_neighbors}) is very large when compared to number of ' \
                 f'data points ({data.shape[0]}). Consider lowering number of neighbours to less than 1/4th, e.g. ' \
                 f'{data.shape[0] // 4 - 1}.'
+            logging.warning(warning_msg)
         algo = umap.UMAP(n_components=2, transform_seed=random_state, **kwargs)
     elif type == 'tsne':
         kwargs['perplexity'] = kwargs.get('perplexity', 50)

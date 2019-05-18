@@ -187,6 +187,8 @@ def get_selected_features(selection: str):
 
 
 def feature_selection_to_columns(selection, all_columns):
+    if len(selection) == 1:
+        selection = selection[0]
     regex = re.compile('|'.join(selection))
     selected_columns = list(filter(regex.match, all_columns))
     return selected_columns
@@ -203,12 +205,14 @@ def feature_selection_to_columns(selection, all_columns):
     'Supply the features names after comma like this: "pitch,LPC". Default (all) takes all features'                                                                   
     'Check the docs for more info: https://tracek.github.io/audio-explorer/audio_embedding/')
 def h5_to_embedding(input, output, jobs, algo, grid, select: str):
+    start_time = time.time()
     select = get_selected_features(selection=select)
     if os.path.isfile(input):
         with pd.HDFStore(input) as hdf_store:
             hdf_keys = hdf_store.keys()
             columns = hdf_store.get_storer(hdf_keys[0]).non_index_axes[0][1]
         select = feature_selection_to_columns(selection=select, all_columns=columns)
+        logging.info(f'Loading {len(hdf_keys)} from {input}...')
         df = read_selected_features_from_hdf(selection=select, paths=hdf_keys)
         if not output:
             output = os.path.splitext(input)[0]
@@ -217,6 +221,7 @@ def h5_to_embedding(input, output, jobs, algo, grid, select: str):
         h5_features = glob.glob(input + '/*.h5', recursive=False)
         if not h5_features:
             raise Exception(f'No hdf5 files found in {input}')
+        logging.info(f'Loading {len(h5_features)} data files...')
         with pd.HDFStore(h5_features[0]) as hdf_store:
             key = hdf_store.keys()[0]
             columns = hdf_store.get_storer(key).non_index_axes[0][1]
@@ -226,7 +231,9 @@ def h5_to_embedding(input, output, jobs, algo, grid, select: str):
             output = input
     else:
         raise Exception(f'Input {input} not recognised as file or directory.')
+    logging.info('Feature files loaded. Building model...')
     embedding.fit_and_save_with_grid(df.values, type=algo, output_dir=output, n_jobs=jobs, grid_path=grid)
+    logging.info(f'Completed in {time.time() - start_time:.2f}s')
 
 
 @cli.command('m2e', help='Model to embedddings')

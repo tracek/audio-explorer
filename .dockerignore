@@ -20,3 +20,4 @@ coverage.xml
 *,cover
 *.log
 .git
+data/*
