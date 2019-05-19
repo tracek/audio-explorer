@@ -26,6 +26,7 @@ import dash_audio_components
 import dash_upload_components
 import dash_core_components as dcc
 import dash_html_components as html
+import plotly.graph_objs as go
 import numpy as np
 import pandas as pd
 import urllib.parse
@@ -412,7 +413,8 @@ def upload_to_s3(filename):
 
 @app.callback([Output('embedding-graph', 'figure'),
                Output('feature-store', 'data'),
-               Output('div-report-selection', 'children')],
+               Output('div-report-selection', 'children'),
+               Output('div-report-selection', 'style')],
               [Input('filename-store', 'data'),
                Input('apply-button', 'n_clicks')],
               [State('algorithm-dropdown', 'value'),
@@ -435,8 +437,11 @@ def plot_embeddings(filename, n_clicks, embedding_type, fftsize, bandpass, onset
 
         params = map_parameters(embedding_type, neighbours)
 
+        style = {'display': 'inline-block', 'margin-left': 'auto',
+                 'margin-right': '20px', 'float': 'right'}
+
         try:
-            embeddings, warning_msg = get_embeddings(
+            embeddings, msg = get_embeddings(
                 data=features.drop(columns=['onset', 'offset']),
                 type=embedding_type, n_jobs=1,
                 **params)
@@ -453,9 +458,15 @@ def plot_embeddings(filename, n_clicks, embedding_type, fftsize, bandpass, onset
                                             customdata=features[extra_data],
                                             text=mean_freq)
 
-            return figure, features.round(2).to_dict(orient='rows'), warning_msg
+            if msg is None:
+                msg = f'Found {len(embeddings)} samples'
+            else:
+                style['color'] = 'red'
+
+            return figure, features.round(2).to_dict(orient='rows'), msg, style
         except Exception as ex:
-            return dcc.Graph(), None, str(ex)
+            style['color'] = 'red'
+            return go.Figure(), None, str(ex), style
     else:
         raise PreventUpdate
 
@@ -622,13 +633,19 @@ def generate_layout():
                                     autoPlay=True,
                                     controls=False
                                 ),
-                                dcc.Input(id='input-filename', type='text', debounce=True, placeholder='Filename',
-                                          style={'display': 'inline-block', 'width': '300px', 'margin-right': '30px'}),
-                                html.Div(id='div-placeholder-download',
-                                         style={'display': 'inline-block', 'margin-right': '60px'}),
-                                html.Div(id='div-report-selection',
-                                         style={'display': 'inline-block', 'margin-left': 'auto', 'margin-right': '20px',
-                                                'float': 'right', 'color': 'red'})
+                                html.Div(className='row', children=[
+                                    html.Div(className='one-half column', children=[
+                                        dcc.Input(id='input-filename', type='text', debounce=True,
+                                                  placeholder='Filename',
+                                                  style={'display': 'inline-block', 'width': '400px',
+                                                         'margin-right': '30px'}),
+                                        html.Div(id='div-placeholder-download',
+                                                 style={'display': 'inline-block', 'margin-right': '60px'}),
+                                    ]),
+                                    html.Div(className='one-half column', children=[
+                                        html.Div(id='div-report-selection')
+                                    ])
+                                ])
                             ]),
                             html.Div(className="four columns", children=[
                                 html.Div([
@@ -655,14 +672,13 @@ def generate_layout():
                                     placeholder='Select embedding',
                                     value='umap'
                                 ),
-                                html.H4('Select features'),
+                                html.H4('Parameters'),
                                 dcc.Checklist(
                                     id='features-selection',
                                     options=[{'label': label, 'value': value} for value, label in FEATURES.items()],
                                     values=['freq'],
                                     labelStyle={'display': 'inline-block', 'margin': '6px'}
                                 ),
-                                html.H4('Algorithm parameters'),
                                 named_slider(
                                     id='fft-size',
                                     min=2 ** 7,
