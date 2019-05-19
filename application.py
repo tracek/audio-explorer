@@ -269,6 +269,44 @@ def update_download_link(select_data, data):
     return csv_string
 
 
+@app.callback(Output('div-placeholder-download', 'children'),
+              [Input('embedding-graph', 'selectedData'),
+               Input('input-filename', 'value')],
+              [State('filename-store', 'data'),
+               State('feature-store', 'data')])
+def update_download_link_explore(select_data, user_input_filename, original_filename, data):
+    if select_data and (user_input_filename or original_filename):
+        df = pd.DataFrame(data)
+        selected_points = [point['pointIndex'] for point in select_data['points']]
+        df = df.loc[selected_points]
+        csv_string = df.to_csv(index=False, encoding='utf-8')
+        csv_string = "data:text/csv;charset=utf-8," + urllib.parse.quote(csv_string)
+
+        text = f"Download selection: {len(selected_points)} out of {len(data)} points"
+
+        if user_input_filename:
+            filename = user_input_filename + '.csv'
+        else:
+            filename = original_filename + '.csv'
+
+        download_button = html.A(
+            text,
+            id='download-link-explore',
+            download=filename,
+            href=csv_string,
+            target="_blank",
+        )
+        return download_button
+
+
+@app.callback(Output('input-filename', 'value'),
+              [Input('upload-data', 'fileNames')])
+def update_input_filename(filenames):
+    if filenames is not None:
+        filename = os.path.splitext(filenames[0])[0]
+        return filename
+
+
 @app.callback(Output('name-fft-size', 'children'),
               [Input('fft-size', 'value')])
 def display_value(value):
@@ -378,7 +416,7 @@ def upload_to_s3(filename):
 
 @app.callback([Output('embedding-graph', 'figure'),
                Output('feature-store', 'data'),
-               Output('error-report', 'children')],
+               Output('div-report-selection', 'children')],
               [Input('filename-store', 'data'),
                Input('apply-button', 'n_clicks')],
               [State('algorithm-dropdown', 'value'),
@@ -553,7 +591,6 @@ def reduce_noise(click, url, select_data):
         return 1
 
 
-
 # @app.callback(Output('waveform-graph', 'figure'),
 #              [Input('embedding-graph', 'selectedData'),
 #               Input('filename-store', 'data'),
@@ -605,7 +642,7 @@ def generate_layout():
                         # Body
                         html.Div(className="row", children=[
                             html.Div(className="eight columns", children=[
-                                html.Div(id='error-report', style={'color': 'red'}),
+#                                html.Div(id='error-report', style={'color': 'red'}),
                                 dcc.Graph(
                                     id='embedding-graph',
                                     style={'height': '90vh'}
@@ -616,7 +653,14 @@ def generate_layout():
                                     src='',
                                     autoPlay=True,
                                     controls=False
-                                )
+                                ),
+                                dcc.Input(id='input-filename', type='text', debounce=True, placeholder='Filename',
+                                          style={'display': 'inline-block', 'width': '300px', 'margin-right': '30px'}),
+                                html.Div(id='div-placeholder-download',
+                                         style={'display': 'inline-block', 'margin-right': '60px'}),
+                                html.Div(id='div-report-selection',
+                                         style={'display': 'inline-block', 'margin-left': 'auto', 'margin-right': '20px',
+                                                'float': 'right', 'color': 'red'})
                             ]),
                             html.Div(className="four columns", children=[
                                 html.Div([
