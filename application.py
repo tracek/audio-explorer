@@ -80,7 +80,6 @@ def named_slider(id, min, max, value, step=None, marks=None, slider_type=dcc.Sli
         hidden=hidden,
         id=f'slidercontainer-{id}'
     )
-
     return div
 
 
@@ -134,7 +133,6 @@ def resolve_filtering_expression(df: pd.DataFrame, filter_expression: str):
         col_name = filter_expression[:match.start()].replace('\"', '').replace(' ', '')
         filter_value = float(filter_expression[match.end() + 1:])
         condition = ops[operator_s](df[col_name], filter_value)
-
     return condition
 
 
@@ -156,7 +154,6 @@ def log_user_action(action_type, datetime, session_id, filename=None, embedding_
         sample_len=sample_len,
         selected_features=selected_features,
     )
-
     return user_data
 
 
@@ -222,13 +219,12 @@ def show_features_in_table(data):
     return feature_table
 
 
-@app.callback(
-    Output('features-table', "data"),
-    [Input('feature-store', 'data'),
-     Input('embedding-graph', 'selectedData'),
-     Input('features-table', "pagination_settings"),
-     Input('features-table', "sorting_settings"),
-     Input('features-table', "filtering_settings")])
+@app.callback(Output('features-table', "data"),
+             [Input('feature-store', 'data'),
+              Input('embedding-graph', 'selectedData'),
+              Input('features-table', "pagination_settings"),
+              Input('features-table', "sorting_settings"),
+              Input('features-table', "filtering_settings")])
 def update_table(data, select_data, pagination_settings, sorting_settings, filtering_settings):
     filtering_expressions = filtering_settings.split(' && ')
     df = pd.DataFrame(data)
@@ -257,8 +253,8 @@ def update_table(data, select_data, pagination_settings, sorting_settings, filte
 
 
 @app.callback(Output('download-link', 'href'),
-              [Input('embedding-graph', 'selectedData'),
-               Input('feature-store', 'data')])
+             [Input('embedding-graph', 'selectedData'),
+              Input('feature-store', 'data')])
 def update_download_link(select_data, data):
     df = pd.DataFrame(data)
     if select_data and event_triggered('embedding-graph.selectedData'):
@@ -566,19 +562,17 @@ def full_spectrogram_graph(select_data, url, selection, n_clicks, bandpass, feat
         raise PreventUpdate
 
 
-@app.callback(
-    Output('reduce-noise-container', 'children'),
-    [Input('embedding-graph', 'selectedData')])
+@app.callback(Output('reduce-noise-container', 'children'),
+             [Input('embedding-graph', 'selectedData')])
 def update_table(select_data):
     if select_data:
         return html.Button('Remove selected frequencies', id='reduce-noise-button')
 
 
-@app.callback(
-     Output('apply-button', 'n_clicks'),
-    [Input('reduce-noise-button', 'n_clicks')],
-    [State('filename-store', 'data'),
-     State('embedding-graph', 'selectedData')]
+@app.callback(Output('apply-button', 'n_clicks'),
+             [Input('reduce-noise-button', 'n_clicks')],
+             [State('filename-store', 'data'),
+              State('embedding-graph', 'selectedData')]
 )
 def reduce_noise(click, url, select_data):
     if url is not None and select_data is not None:
@@ -797,7 +791,6 @@ def generate_layout():
             ]),
         ])
     ])
-
     return div
 
 
