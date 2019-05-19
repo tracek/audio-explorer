@@ -70,10 +70,12 @@ def fit_and_save_with_grid(data: Union[np.ndarray, pd.DataFrame], grid_path: str
 def fit_and_save(data: Union[np.ndarray, pd.DataFrame], output_dir: str, type: str='umap', n_jobs=1, **kwargs):
     params_string = '-'.join(['{}_{}'.format(k, v) for k, v in kwargs.items()])
     logging.info(f'Running {type} with {params_string}')
-    embedding = get_embeddings(data=data, type=type, n_jobs=n_jobs, **kwargs)
-    output_path = os.path.join(output_dir, type + '_' + params_string + '.joblib')
-    logging.info(f'Model built successfully. Saving model to {output_path}...')
-    joblib.dump(embedding, filename=output_path)
+    embedding, algo, warning = get_embeddings(data=data, type=type, n_jobs=n_jobs, **kwargs)
+    model_output_path = os.path.join(output_dir, type + '_' + params_string + '.joblib')
+    embedding_output_path = os.path.join(output_dir, type + '_' + params_string + '_data.joblib')
+    logging.info(f'Model built successfully. Saving model to {model_output_path}...')
+    joblib.dump(algo, filename=model_output_path)
+    joblib.dump(embedding, filename=embedding_output_path)
 
 
 def load_and_transform(data: np.ndarray, name: str) -> np.ndarray:
@@ -145,6 +147,6 @@ def get_embeddings(data: Union[np.ndarray, pd.DataFrame] , type: str='umap', n_j
         raise NotImplemented(f'Requested type {type} is not implemented')
 
     embedding = algo.fit_transform(data)
-    return embedding, warning_msg
+    return embedding, algo, warning_msg
 
 
