@@ -591,32 +591,6 @@ def reduce_noise(click, url, select_data):
         return 1
 
 
-# @app.callback(Output('waveform-graph', 'figure'),
-#              [Input('embedding-graph', 'selectedData'),
-#               Input('filename-store', 'data'),
-#               Input('waveform-graph', 'relayoutData'),
-#               Input('apply-button', 'n_clicks')],
-#              [State('bandpass', 'value')])
-# def waveform_graph(select_data, url, selection, n_clicks, bandpass):
-#     lowcut, higcut = bandpass
-#     if selection is not None:
-#         if 'xaxis.range[0]' in selection and 'xaxis.range[1]' in selection:
-#             start = selection['xaxis.range[0]']
-#             end = selection['xaxis.range[1]']
-#             y = read_wave_part_from_s3(S3_BUCKET, path=url, fs=SAMPLING_RATE, start=start, end=end)
-#             y = y / y.max()
-#         else:
-#             raise PreventUpdate
-#     else:
-#         fs, y = read_wave_local(TEMP_STORAGE + url)
-#         start = 0
-#         end = len(y) / fs
-#
-#     y = filters.frequency_filter(y, fs=SAMPLING_RATE, lowcut=lowcut, highcut=higcut)
-#     fig = visualize.waveform_shaded(y, fs=SAMPLING_RATE, start=start, end=end)
-#     return fig
-
-
 def generate_layout():
     session_id = str(uuid.uuid4())
     div = html.Div([
