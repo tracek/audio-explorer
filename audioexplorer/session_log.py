@@ -21,15 +21,15 @@ import httpagentparser
 import sqlalchemy as db
 import boto3
 from functools import lru_cache
-from settings import DB_ENGINE, DB_USER, DB_DATABASE_NAME, DB_HOSTNAME, DB_PASSWORD, AWS_REGION
-
-engine = db.create_engine(f'{DB_ENGINE}://{DB_USER}:{DB_PASSWORD}@{DB_HOSTNAME}/{DB_DATABASE_NAME}')
-metadata = db.MetaData(bind=engine, reflect=True)
+from settings import DB_ENGINE, DB_USER, DB_DATABASE_NAME, DB_HOSTNAME, DB_PASSWORD, AWS_REGION, SERVE_LOCAL
 
 
 def insert_user(datetime, filename, agent, user_ip, embedding_type, fftsize, bandpass, onset_threshold, sample_len,
                 selected_features, action_type, session_id):
+    # if not SERVE_LOCAL:
     user_os, browser = httpagentparser.simple_detect(agent)
+    engine = db.create_engine(f'{DB_ENGINE}://{DB_USER}:{DB_PASSWORD}@{DB_HOSTNAME}/{DB_DATABASE_NAME}')
+    metadata = db.MetaData(bind=engine, reflect=True)
 
     d = {'datetime': datetime,
          'user_os': user_os,
@@ -49,22 +49,24 @@ def insert_user(datetime, filename, agent, user_ip, embedding_type, fftsize, ban
     extra_ip_info = get_ipinfo(user_ip)
     d.update(extra_ip_info)
     users = metadata.tables['users']
-    users.insert().values(**d).execute()
+    conn = users.insert().values(**d).execute()
+    conn.close()
+
     return d
 
 
-def first_session(session_id):
-    text = db.text('user_session_id = :uuid')
-    text = text.bindparams(uuid=session_id)
-    users = metadata.tables['users']
-    r = users.select(text).execute().fetchone()
-    if r:
-        return False
-    else:
-        return True
+# def first_session(session_id):
+#     text = db.text('user_session_id = :uuid')
+#     text = text.bindparams(uuid=session_id)
+#     users = metadata.tables['users']
+#     r = users.select(text).execute().fetchone()
+#     if r:
+#         return False
+#     else:
+#         return True
 
 
-@lru_cache(maxsize=1)
+@lru_cache(maxsize=100)
 def get_ipinfo(ip_address: str) -> dict:
     apikey = get_ipinfo_secret()
     ipinfo_handler = ipinfo.getHandler(apikey)
