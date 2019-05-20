@@ -104,13 +104,12 @@ def get_embeddings(data: Union[np.ndarray, pd.DataFrame] , type: str='umap', n_j
     :param kwargs: params to pass to the embedding algorithm
     :return:
     """
+    warning_msg = None
     if data.shape[0] < 10:
-        raise EmbeddingException(f'The input data consisted of {data.shape[0]} points, which is too few for meaningful '
-                              f'embedding. Consider reducing onset detection threshold.')
+        warning_msg = f'The input data consisted of {data.shape[0]} points. Consider reducing onset detection threshold.'
     data = StandardScaler().fit_transform(data)
     type = type.lower()
     random_state = 42
-    warning_msg = None
     if type == 'umap':
         # somehow pydev debugger gets very slow upon loading of UMAP
         # moving umap here for the time being
