@@ -87,7 +87,7 @@ def load_and_transform(data: np.ndarray, name: str) -> np.ndarray:
     return embedding
 
 
-def get_embeddings(data: Union[np.ndarray, pd.DataFrame] , type: str='umap', n_jobs: int=1, **kwargs) -> (np.ndarray, str):
+def get_embeddings(data: Union[np.ndarray, pd.DataFrame] , type: str='umap', n_jobs: int=1, **kwargs):
     """
     Following embedding types are available
      'umap': 'Uniform Manifold Approximation and Projection',

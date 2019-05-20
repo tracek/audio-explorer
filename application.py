@@ -441,7 +441,7 @@ def plot_embeddings(filename, n_clicks, embedding_type, fftsize, bandpass, onset
                  'margin-right': '20px', 'float': 'right'}
 
         try:
-            embeddings, msg = get_embeddings(
+            embeddings, algo, msg = get_embeddings(
                 data=features.drop(columns=['onset', 'offset']),
                 type=embedding_type, n_jobs=1,
                 **params)
