@@ -1,6 +1,7 @@
 # Developer notes
 
 The web app is hosted on AWS and uses following components:
+
 * Elastic Beanstalk with Application Load Balancer: orchestration
 * S3: storage
 * Route 53: DNS service

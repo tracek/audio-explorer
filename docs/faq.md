@@ -1,4 +1,4 @@
-# Frequently Asked Questions
+# FAQ
 
 
 ##### Why bandpass filter only goes to 8000 Hz?
