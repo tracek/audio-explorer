@@ -501,7 +501,7 @@ def display_click_image(click_data, select_data, n_clicks, url, bandpass):
                 fs=SAMPLING_RATE,
                 start=start - AUDIO_MARGIN,
                 end=end + AUDIO_MARGIN)
-            im = visualize.specgram_base64(y=wav, fs=SAMPLING_RATE, start=start - AUDIO_MARGIN, end=end + AUDIO_MARGIN)
+            im = visualize.specgram_base64(y=wav, fs=SAMPLING_RATE, start=start, end=end, margin=AUDIO_MARGIN)
 
             return html.Img(
                 src='data:image/png;base64, ' + im,

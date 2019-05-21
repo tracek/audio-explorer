@@ -68,14 +68,14 @@ def scatter_plot(x, y, customdata=None, text=None, opacity=0.8) -> go.Figure:
     return fig
 
 
-def specgram_base64(y: np.ndarray, fs: int, start: float, end: float, margin: float=0.2) -> str:
+def specgram_base64(y: np.ndarray, fs: int, start: float, end: float, margin) -> str:
     f, ax = plt.subplots()
-    plt.specgram(y, Fs=fs, xextent=[start, end])
+    plt.specgram(y, Fs=fs, xextent=[start - margin, end + margin])
     plt.xlabel('Time [s]')
     plt.ylabel('Frequency [Hz]')
     plt.title('Spectrogram')
-    ax.axvline(x=start + margin, color='red', alpha=0.3)
-    ax.axvline(x=end - margin, color='red', alpha=0.3)
+    ax.axvline(x=start, color='red', alpha=0.3)
+    ax.axvline(x=end, color='red', alpha=0.3)
 
     with BytesIO() as stream:
         plt.savefig(stream, format='png')

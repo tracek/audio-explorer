@@ -18,5 +18,5 @@ AWS_REGION = 'eu-central-1'
 SERVE_LOCAL = os.getenv('LOCAL', False)
 
 SAMPLING_RATE = 16000 # All audio will be resampled to this frequency
-AUDIO_MARGIN = 0.2 # Margin applied to start and end of the audio to make it longer and improve UX. Not applied to any calculations.
+AUDIO_MARGIN = 0.05 # Margin applied to start and end of the audio to make it longer and improve UX. Not applied to any calculations.
 TEMP_STORAGE = '/tmp/' # Temporary storage location
