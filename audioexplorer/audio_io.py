@@ -108,6 +108,22 @@ def read_wav_parts_from_local(path: str, onsets: list, dtype = 'int16'):
     return wavs
 
 
+def read_wav_part_from_local(path: str, start_s: int, end_s: int, dtype = 'int16', as_float=False):
+    with wave.open(path, mode='rb') as wavread:
+        fs = wavread.getframerate()
+        start = int(start_s * fs)
+        end = int(end_s * fs)
+        sample_len = end - start
+        wavread.setpos(start)
+        wav_bytes = wavread.readframes(sample_len)
+        wav_array = np.frombuffer(wav_bytes, dtype=dtype)
+        if as_float:
+            wav_array = wav_array / (2 ** 15 - 1)
+
+    return wav_array
+
+
+
 def save_wav(y: np.ndarray, fs: int, path: str):
     y = y * (2 ** 15 - 1)
     wavfile.write(path, fs, y.astype('int16'))

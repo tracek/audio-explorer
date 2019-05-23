@@ -45,6 +45,9 @@ from audioexplorer import visualize
 from audioexplorer import session_log
 from audioexplorer import filters
 
+if SERVE_LOCAL: # Play audio from the local machine
+    import simpleaudio as sa
+
 app = dash.Dash(__name__, external_stylesheets=['https://codepen.io/chriddyp/pen/bWLwgP.css',
                                                 "https://codepen.io/chriddyp/pen/brPBPO.css"])
 app.config['suppress_callback_exceptions']=True
@@ -404,9 +407,12 @@ def log_user_action_cb(mapping, apply_clicks, embedding_type, fftsize, bandpass,
 def upload_to_s3(filename):
     if filename is not None:
         filepath = TEMP_STORAGE + filename
-        copy_file_to_bucket(filepath, filename)
-        url = generate_signed_url(filename)
-        return url
+        if not SERVE_LOCAL:
+            copy_file_to_bucket(filepath, filename)
+            url = generate_signed_url(filename)
+            return url
+        else:
+            return filepath
     else:
         raise PreventUpdate
 
@@ -477,10 +483,15 @@ def plot_embeddings(filename, n_clicks, embedding_type, fftsize, bandpass, onset
 def update_player_status(click_data, url):
     if click_data:
         start, end = click_data['points'][0]['customdata']
-        return {'autoPlay': True,
-                'src': url,
-                'from_position': start - AUDIO_MARGIN,
-                'to_position': end + AUDIO_MARGIN}
+        if SERVE_LOCAL:
+            wav = audio_io.read_wav_part_from_local(url, start - AUDIO_MARGIN, end + AUDIO_MARGIN)
+            sa.play_buffer(wav, 1, 2, SAMPLING_RATE)
+            raise PreventUpdate
+        else:
+            return {'autoPlay': True,
+                    'src': url,
+                    'from_position': start - AUDIO_MARGIN,
+                    'to_position': end + AUDIO_MARGIN}
     else:
         raise PreventUpdate
 
@@ -495,12 +506,17 @@ def display_click_image(click_data, select_data, n_clicks, url, bandpass):
     if url:
         if click_data is not None and event_triggered('embedding-graph.clickData'):
             start, end = click_data['points'][0]['customdata']
-            wav = audio_io.read_wave_part_from_s3(
-                bucket=S3_BUCKET,
-                path=url,
-                fs=SAMPLING_RATE,
-                start=start - AUDIO_MARGIN,
-                end=end + AUDIO_MARGIN)
+            wav = audio_io.read_wav_part_from_local(
+                path=TEMP_STORAGE + url,
+                start_s=start - AUDIO_MARGIN,
+                end_s=end + AUDIO_MARGIN
+            )
+            # wav = audio_io.read_wave_part_from_s3(
+            #     bucket=S3_BUCKET,
+            #     path=url,
+            #     fs=SAMPLING_RATE,
+            #     start=start - AUDIO_MARGIN,
+            #     end=end + AUDIO_MARGIN)
             im = visualize.specgram_base64(y=wav, fs=SAMPLING_RATE, start=start, end=end, margin=AUDIO_MARGIN)
 
             return html.Img(
@@ -634,15 +650,15 @@ def generate_layout():
                                     controls=False
                                 ),
                                 html.Div(className='row', children=[
-                                    html.Div(className='one-half column', children=[
+                                    html.Div(className='seven columns', children=[
                                         dcc.Input(id='input-filename', type='text', debounce=True,
                                                   placeholder='Filename',
-                                                  style={'display': 'inline-block', 'width': '400px',
+                                                  style={'display': 'inline-block', 'width': '340px',
                                                          'margin-right': '30px'}),
                                         html.Div(id='div-placeholder-download',
                                                  style={'display': 'inline-block', 'margin-right': '60px'}),
                                     ]),
-                                    html.Div(className='one-half column', children=[
+                                    html.Div(className='five columns', children=[
                                         html.Div(id='div-report-selection')
                                     ])
                                 ])
@@ -652,7 +668,8 @@ def generate_layout():
                                     dash_upload_components.Upload(
                                         id='upload-data',
                                         maxFiles=1,
-                                        simultaneousUploads=1,
+                                        simultaneousUploads=3,
+                                        chunkSize=4 * 1024 * 1024,
                                         maxFileSize=5 * 1024 * 1024 * 500,  # 500 MB
                                         service="/upload_resumable",
                                         textLabel="UPLOAD",
