@@ -511,12 +511,6 @@ def display_click_image(click_data, select_data, n_clicks, url, bandpass):
                 start_s=start - AUDIO_MARGIN,
                 end_s=end + AUDIO_MARGIN
             )
-            # wav = audio_io.read_wave_part_from_s3(
-            #     bucket=S3_BUCKET,
-            #     path=url,
-            #     fs=SAMPLING_RATE,
-            #     start=start - AUDIO_MARGIN,
-            #     end=end + AUDIO_MARGIN)
             im = visualize.specgram_base64(y=wav, fs=SAMPLING_RATE, start=start, end=end, margin=AUDIO_MARGIN)
 
             return html.Img(
@@ -637,7 +631,6 @@ def generate_layout():
                         # Body
                         html.Div(className="row", children=[
                             html.Div(className="eight columns", children=[
-#                                html.Div(id='error-report', style={'color': 'red'}),
                                 dcc.Graph(
                                     id='embedding-graph',
                                     style={'height': '90vh'}
