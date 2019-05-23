@@ -303,7 +303,7 @@ def update_download_link_explore(select_data, user_input_filename, original_file
               [Input('upload-data', 'fileNames')])
 def update_input_filename(filenames):
     if filenames is not None:
-        filename = os.path.splitext(filenames[0])[0]
+        filename = os.path.splitext(filenames[-1])[0]
         return filename
 
 
