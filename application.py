@@ -256,33 +256,29 @@ def update_table(data, select_data, pagination_settings, sorting_settings, filte
     ].to_dict('records')
 
 
-@app.callback(Output('download-link', 'href'),
-             [Input('embedding-graph', 'selectedData'),
-              Input('feature-store', 'data')])
-def update_download_link(select_data, data):
-    df = pd.DataFrame(data)
-    if select_data and event_triggered('embedding-graph.selectedData'):
-        selected_points = [point['pointIndex'] for point in select_data['points']]
-        df = df.loc[selected_points]
-    csv_string = df.to_csv(index=False, encoding='utf-8')
-    csv_string = "data:text/csv;charset=utf-8," + urllib.parse.quote(csv_string)
-    return csv_string
+@app.callback(Output('div-download-table', 'children'),
+             [Input('div-download-explore', 'children')])
+def update_download_link(link):
+    return link
 
 
-@app.callback(Output('div-placeholder-download', 'children'),
+@app.callback(Output('div-download-explore', 'children'),
               [Input('embedding-graph', 'selectedData'),
-               Input('input-filename', 'value')],
-              [State('filename-store', 'data'),
-               State('feature-store', 'data')])
-def update_download_link_explore(select_data, user_input_filename, original_filename, data):
-    if select_data and (user_input_filename or original_filename):
+               Input('input-filename', 'value'),
+               Input('feature-store', 'data')],
+              [State('filename-store', 'data')])
+def update_download_link_explore(select_data, user_input_filename, data, original_filename):
+    if data and (user_input_filename or original_filename):
         df = pd.DataFrame(data)
-        selected_points = [point['pointIndex'] for point in select_data['points']]
-        df = df.loc[selected_points]
+        if select_data:
+            selected_points = [point['pointIndex'] for point in select_data['points']]
+            df = df.loc[selected_points].reindex()
+            text = f"Download {len(selected_points)} out of {len(data)} points"
+        else:
+            text = f'Download all'
+
         csv_string = df.to_csv(index=False, encoding='utf-8')
         csv_string = "data:text/csv;charset=utf-8," + urllib.parse.quote(csv_string)
-
-        text = f"Download selection: {len(selected_points)} out of {len(data)} points"
 
         if user_input_filename:
             filename = user_input_filename + '.csv'
@@ -648,7 +644,7 @@ def generate_layout():
                                                   placeholder='Filename',
                                                   style={'display': 'inline-block', 'width': '340px',
                                                          'margin-right': '30px'}),
-                                        html.Div(id='div-placeholder-download',
+                                        html.Div(id='div-download-explore',
                                                  style={'display': 'inline-block', 'margin-right': '60px'}),
                                     ]),
                                     html.Div(className='five columns', children=[
@@ -788,22 +784,10 @@ def generate_layout():
                             'padding': '10px 30px'
                         },
                         children=[
-                            html.Div(id='features-container')
+                            html.Div(id='features-container'),
+                            html.Div(id='div-download-table')
                         ]
                     )
-                ),
-                html.A(
-                    'Download Data',
-                    id='download-link',
-                    download="selection.csv",
-                    href="",
-                    target="_blank",
-                    style={
-                        'width': '90%',
-                        'max-width': 'none',
-                        'font-size': '1.5rem',
-                        'padding': '30px 100px'
-                    }
                 ),
             ]),
             dcc.Tab(label='About', children=[
