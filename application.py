@@ -500,6 +500,7 @@ def update_player_status(click_data, url):
                [State('bandpass', 'value')])
 def display_click_image(click_data, select_data, n_clicks, url, bandpass):
     if url:
+        lowcut, higcut = bandpass
         if click_data is not None and event_triggered('embedding-graph.clickData'):
             start, end = click_data['points'][0]['customdata']
             wav = audio_io.read_wav_part_from_local(
@@ -507,6 +508,7 @@ def display_click_image(click_data, select_data, n_clicks, url, bandpass):
                 start_s=start - AUDIO_MARGIN,
                 end_s=end + AUDIO_MARGIN
             )
+            wav = filters.frequency_filter(wav, fs=SAMPLING_RATE, lowcut=lowcut, highcut=higcut)
             im = visualize.specgram_base64(y=wav, fs=SAMPLING_RATE, start=start, end=end, margin=AUDIO_MARGIN)
 
             return html.Img(
@@ -525,7 +527,6 @@ def display_click_image(click_data, select_data, n_clicks, url, bandpass):
             else:
                 fs, wavs = audio_io.read_wave_local(TEMP_STORAGE + url)
 
-            lowcut, higcut = bandpass
             wavs = filters.frequency_filter(wavs, fs=SAMPLING_RATE, lowcut=lowcut, highcut=higcut)
             fig = visualize.power_spectrum(wavs, fs=SAMPLING_RATE)
             return dcc.Graph(id='spectrum', figure=fig)
