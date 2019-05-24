@@ -52,7 +52,7 @@ app = dash.Dash(__name__, external_stylesheets=['https://codepen.io/chriddyp/pen
                                                 "https://codepen.io/chriddyp/pen/brPBPO.css"])
 app.config['suppress_callback_exceptions']=True
 dash_upload_components.decorate_server(app.server, TEMP_STORAGE)
-application = app.server
+server = app.server
 
 with open('docs/app_description.md', 'r') as file:
     description_md = file.read()
@@ -809,7 +809,4 @@ app.layout = generate_layout()
 
 
 if __name__ == '__main__':
-    if SERVE_LOCAL:
-        app.run_server(debug=True, port=8080)
-    else:
-        application.run(host='0.0.0.0', debug=False, port=8080)
+    app.run_server(debug=True, port=8080)
