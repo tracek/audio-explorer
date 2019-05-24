@@ -19,14 +19,15 @@ RUN conda install -c conda-forge --quiet --yes \
     sqlalchemy=1.3.3 \
     psycopg2=2.8.2 \
     datashader=0.7.0 \
-    gunicorn=19.9.0
+    gunicorn=19.9.0 \
+    dash==0.43 \
+    dash-table=3.6.0
 
 RUN pip install --no-cache-dir httpagentparser \
     ipinfo \
     dash_audio_components \
     dash_upload_components \
     noisereduce \
-    dash==0.43.0 \
     sox==1.3.7
 
 COPY . /app
