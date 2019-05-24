@@ -807,9 +807,9 @@ def generate_layout():
 
 app.layout = generate_layout()
 
-#
-# if __name__ == '__main__':
-#     if SERVE_LOCAL:
-#         app.run_server(debug=True, port=8080)
-#     else:
-#         application.run(host='0.0.0.0', debug=False, port=8080)
+
+if __name__ == '__main__':
+    if SERVE_LOCAL:
+        app.run_server(debug=True, port=8080)
+    else:
+        application.run(host='0.0.0.0', debug=False, port=8080)
