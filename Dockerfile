@@ -19,7 +19,7 @@ RUN conda install -c conda-forge --quiet --yes \
     sqlalchemy=1.3.3 \
     psycopg2=2.8.2 \
     datashader=0.7.0 \
-    gunicorn=19.9.0 \
+    gunicorn=19.9.0
 
 
 RUN pip install --no-cache-dir httpagentparser \
