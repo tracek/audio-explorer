@@ -32,4 +32,4 @@ RUN pip install --no-cache-dir httpagentparser \
 COPY . /app
 WORKDIR /app
 EXPOSE 8080
-CMD ["python", "application.py"]
+CMD ["gunicorn", "-w", "8", "-b", "0.0.0.0:8080", "application:application"]
