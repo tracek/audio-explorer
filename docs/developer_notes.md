@@ -7,6 +7,7 @@ The web app is hosted on AWS and uses following components:
 * Route 53: DNS service
 * Relational Database Service (RDS) with postgresql
 * Secrets Manager: protect secrets (plotly, ipinfo)
+* Gunicorn: WSGI
 
 
 Elastic Beanstalk automatically handles the details of capacity provisioning, load balancing, scaling, and application health monitoring.
