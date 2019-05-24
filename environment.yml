@@ -1,26 +1,41 @@
-name: audio
+name: audioexplorer
 channels:
   - conda-forge
   - defaults
 dependencies:
   - python=3.6.8
   - aubio=0.4.9
-  - yaafe=0.70
   - librosa=0.6.3
-  - pandas=0.24.1
-  - numpy=1.16.1
+  - pandas=0.24.2
+  - numpy=1.16.3
+  - xarray=0.11.3
   - joblib=0.13.2
-  - matplotlib=3.0.2
-  - scikit-learn=0.20.2
-  - scipy=1.2.1
-  - boto3=1.9.107
+  - matplotlib=3.1.0
+  - scikit-learn=0.21.2
+  - scipy=1.3.0
+  - boto3=1.9.155
   - umap-learn=0.3.8
-  - sox
-  - pytables
+  - python-dotenv=0.10.2
+  - click=7.0
+  - datashader=0.7.0
+  - plotly=3.9.0
+  - dash=0.43.0
+  - flask=1.0.3
+  - mkdocs=1.0.4
+  - sqlalchemy=1.3.3
+  - psycopg2=2.8.2
+  - pip=19.1.1
+  - markdown=3.1
+  - testpath<4
+  - PyYAML<5
+  - hdf5=1.10.2
+  - yaafe=0.70=py36h0bee7d0_1
+  - pytables=3.4.3=py36h02b9ad4_2
   - pip:
     - awsebcli
-    - dash==0.42.0
     - dash_audio_components
     - dash_upload_components
-    - pysox
-    - click
+    - sox
+    - noisereduce
+    - mkdocs-material
+    - httpagentparser

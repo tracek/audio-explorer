@@ -10,7 +10,7 @@ RUN conda install -c conda-forge --quiet --yes \
     pandas=0.24.2 \
     numpy=1.16.3 \
     joblib=0.13.2 \
-    matplotlib=3.0.3 \
+    matplotlib=3.1.0 \
     scikit-learn=0.21.2 \
     scipy=1.3.0 \
     boto3=1.9.155 \
