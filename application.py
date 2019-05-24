@@ -480,7 +480,7 @@ def update_player_status(click_data, url):
     if click_data:
         start, end = click_data['points'][0]['customdata']
         if SERVE_LOCAL:
-            wav = audio_io.read_wav_part_from_local(url, start - AUDIO_MARGIN, end + AUDIO_MARGIN)
+            wav = audio_io.read_wav_part_from_local(url, start - AUDIO_MARGIN, end + AUDIO_MARGIN, as_float=False)
             sa.play_buffer(wav, 1, 2, SAMPLING_RATE)
             raise PreventUpdate
         else:
@@ -522,7 +522,7 @@ def display_click_image(click_data, select_data, n_clicks, url, bandpass):
         else:
             if select_data is not None:
                 onsets = [point['customdata'] for point in select_data['points']]
-                wavs = audio_io.read_wav_parts_from_local(path=TEMP_STORAGE + url, onsets=onsets)
+                wavs = audio_io.read_wav_parts_from_local(path=TEMP_STORAGE + url, onsets=onsets, as_float=True)
                 wavs = np.concatenate(wavs)
             else:
                 fs, wavs = audio_io.read_wave_local(TEMP_STORAGE + url)

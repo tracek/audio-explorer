@@ -19,7 +19,6 @@ import os
 import wave
 import numpy as np
 import boto3
-import librosa
 import sox
 import logging
 from scipy.io import wavfile
@@ -31,6 +30,33 @@ def is_conversion_required(filepath):
     wav = sox.file_info.file_type(filepath) == 'wav'
     convert = sample_rate_16khz and mono and wav
     return not convert
+
+
+def db_to_float(db):
+    """
+    Converts the input db to a float
+    :param db: power ratio expressed in db
+    :return: float in range (0, 1)
+    """
+    return 10 ** (db / 20)
+
+
+def normalise_wav(wav: np.ndarray, db: float, as_float=False):
+    """
+    Convert wav int16 to float
+    :param wav: int16 wav
+    :param db: power ratio expressed in db
+    :return: wav
+    """
+    max_val = 2**15 - 1
+    max_wav = wav.max()
+    ratio = max_wav / max_val
+    target_volume = db_to_float(db)
+    scale_factor = target_volume / ratio
+    wav = wav * scale_factor
+    if not as_float:
+        wav = wav.astype('int16')
+    return wav
 
 
 def convert_to_wav(input_path, output_path):
@@ -91,7 +117,7 @@ def read_wave_part_from_s3(bucket: str, path: str, fs: int, start: int, end: int
     return wav
 
 
-def read_wav_parts_from_local(path: str, onsets: list, dtype = 'int16'):
+def read_wav_parts_from_local(path: str, onsets: list, dtype = 'int16', as_float=False, db=-3):
     wavs = []
     with wave.open(path, mode='rb') as wavread:
         fs = wavread.getframerate()
@@ -102,13 +128,13 @@ def read_wav_parts_from_local(path: str, onsets: list, dtype = 'int16'):
             wavread.setpos(start)
             wav_bytes = wavread.readframes(sample_len)
             wav_array = np.frombuffer(wav_bytes, dtype=dtype)
-            wav_array = wav_array / (2 ** 15 - 1)
+            wav_array = normalise_wav(wav_array, db, as_float=as_float)
             wavs.append(wav_array)
 
     return wavs
 
 
-def read_wav_part_from_local(path: str, start_s: int, end_s: int, dtype = 'int16', as_float=False):
+def read_wav_part_from_local(path: str, start_s: int, end_s: int, dtype = 'int16', as_float=False, db=-3):
     with wave.open(path, mode='rb') as wavread:
         fs = wavread.getframerate()
         start = int(start_s * fs)
@@ -117,13 +143,13 @@ def read_wav_part_from_local(path: str, start_s: int, end_s: int, dtype = 'int16
         wavread.setpos(start)
         wav_bytes = wavread.readframes(sample_len)
         wav_array = np.frombuffer(wav_bytes, dtype=dtype)
-        if as_float:
-            wav_array = wav_array / (2 ** 15 - 1)
+        wav_array = normalise_wav(wav_array, db=db, as_float=as_float)
 
     return wav_array
 
 
-
 def save_wav(y: np.ndarray, fs: int, path: str):
-    y = y * (2 ** 15 - 1)
+    if y.max() < 1:
+        y = y * (2 ** 15 - 1)
     wavfile.write(path, fs, y.astype('int16'))
+
