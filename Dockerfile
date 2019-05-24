@@ -11,13 +11,13 @@ RUN conda install -c conda-forge --quiet --yes \
     numpy=1.16.3 \
     joblib=0.13.2 \
     matplotlib=3.0.3 \
-    scikit-learn=0.20.3 \
-    scipy=1.2.1 \
-    boto3=1.9.134 \
+    scikit-learn=0.21.2 \
+    scipy=1.3.0 \
+    boto3=1.9.155 \
     umap-learn=0.3.8 \
-    python-dotenv=0.10.1 \
+    python-dotenv=0.10.2 \
     sqlalchemy=1.3.3 \
-    psycopg2 \
+    psycopg2=2.8.2 \
     datashader=0.7.0 \
     gunicorn=19.9.0
 
