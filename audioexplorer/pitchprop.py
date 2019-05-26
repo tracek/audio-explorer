@@ -20,7 +20,8 @@ import numpy as np
 import pandas as pd
 
 
-def get_pitch_stats(signal: np.ndarray, fs: int, block_size: int, hop: int, tolerance: float = 0.5) -> dict:
+def get_pitch_stats(signal: np.ndarray, fs: int, block_size: int, hop: int, tolerance: float = 0.2,
+                    algorithm = 'yinfft') -> dict:
     """
     Get basic statistic on pitch in the given signal
     :param signal: 1-d signal
@@ -30,7 +31,7 @@ def get_pitch_stats(signal: np.ndarray, fs: int, block_size: int, hop: int, tole
     :param tolerance:  tolerance for the pitch detection algorithm (for aubio)
     :return:
     """
-    pitch_o = aubio.pitch("yin", block_size, hop, fs)
+    pitch_o = aubio.pitch(algorithm, block_size, hop, fs)
     pitch_o.set_unit('Hz')
     pitch_o.set_tolerance(tolerance)
     signal_win = np.array_split(signal, np.arange(hop, len(signal), hop))

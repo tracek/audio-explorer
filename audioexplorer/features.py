@@ -31,7 +31,7 @@ FEATURES.update(YAAFE_FEATURES)
 
 class FeatureExtractor(object):
 
-    def __init__(self, fs: int, block_size: int=1024, step_size: int=None, selected_features='all'):
+    def __init__(self, fs: int, block_size: int=512, step_size: int=None, selected_features='all'):
         self.fs = fs
         self.block_size = block_size
         if selected_features == 'all':
@@ -54,7 +54,9 @@ class FeatureExtractor(object):
             spectral_props = specprop.spectral_statistics_series(sample, self.fs)
             computed_features.append(spectral_props)
         if 'pitch' in self.selected_features:
-            pitch_stats = pitchprop.get_pitch_stats_series(sample, self.fs, block_size=self.block_size, hop=self.step_size)
+            hop = self.step_size // 2
+            pitch_stats = pitchprop.get_pitch_stats_series(sample, self.fs, block_size=self.block_size, hop=hop,
+                                                           tolerance=0.2)
             computed_features.append(pitch_stats)
         if self.yaafe:
             yaafe_features = self.yaafe.get_mean_features_as_series(sample)
