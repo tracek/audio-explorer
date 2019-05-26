@@ -20,3 +20,4 @@ SERVE_LOCAL = os.getenv('LOCAL', False)
 SAMPLING_RATE = 16000 # All audio will be resampled to this frequency
 AUDIO_MARGIN = 0.05 # Margin applied to start and end of the audio to make it longer and improve UX. Not applied to any calculations.
 TEMP_STORAGE = '/tmp/' # Temporary storage location
+AUDIO_DB = -1 # Normalise input audio to this value

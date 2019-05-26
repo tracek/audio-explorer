@@ -37,7 +37,7 @@ from dash.dependencies import Input, Output, State
 from dash.exceptions import PreventUpdate
 from botocore.client import Config
 
-from settings import S3_BUCKET, AWS_REGION, SERVE_LOCAL, SAMPLING_RATE, AUDIO_MARGIN, TEMP_STORAGE
+from settings import S3_BUCKET, AWS_REGION, SERVE_LOCAL, SAMPLING_RATE, AUDIO_MARGIN, TEMP_STORAGE, AUDIO_DB
 from audioexplorer.features import get, FEATURES
 from audioexplorer.embedding import get_embeddings, EMBEDDINGS
 from audioexplorer import audio_io
@@ -234,7 +234,7 @@ def update_table(data, select_data, pagination_settings, sorting_settings, filte
     df = pd.DataFrame(data)
     if select_data:
         selected_points = [point['pointIndex'] for point in select_data['points']]
-        df = df.loc[selected_points]
+        df = df.loc[selected_points].reindex()
     for filter_expression in filtering_expressions:
         condition = resolve_filtering_expression(df=df, filter_expression=filter_expression)
         if condition is not None:
@@ -359,7 +359,8 @@ def create_file_key_mapping(filenames):
 @app.callback(Output('filename-store', 'data'),
               [Input('mapping-store', 'data')])
 def convert(mapping):
-    audio_io.convert_to_wav(input_path=mapping['filepath'], output_path=TEMP_STORAGE + mapping['key'])
+    audio_io.convert_to_wav(input_path=mapping['filepath'], output_path=TEMP_STORAGE + mapping['key'],
+                            convert_always=True)
     return mapping['key']
 
 
@@ -432,7 +433,7 @@ def plot_embeddings(filename, n_clicks, embedding_type, fftsize, bandpass, onset
         filepath = TEMP_STORAGE + filename
         lowpass, highpass = bandpass
         min_duration = sample_len - 0.05
-        fs, X = audio_io.read_wave_local(filepath)
+        fs, X = audio_io.read_wave_local(filepath, as_float=True)
         features = get(X, fs, n_jobs=1, selected_features=selected_features, lowcut=lowpass, highcut=highpass,
                        block_size=fftsize, onset_detector_type='hfc', onset_silence_threshold=-90,
                        onset_threshold=onset_threshold, min_duration_s=min_duration,    sample_len=sample_len)
@@ -497,8 +498,9 @@ def update_player_status(click_data, url):
                Input('embedding-graph', 'selectedData'),
                Input('apply-button', 'n_clicks'),
                Input('filename-store', 'data')],
-               [State('bandpass', 'value')])
-def display_click_image(click_data, select_data, n_clicks, url, bandpass):
+               [State('bandpass', 'value'),
+                State('fft-size', 'value')])
+def display_click_image(click_data, select_data, n_clicks, url, bandpass, fft_size):
     if url:
         lowcut, higcut = bandpass
         if click_data is not None and event_triggered('embedding-graph.clickData'):
@@ -523,12 +525,11 @@ def display_click_image(click_data, select_data, n_clicks, url, bandpass):
             if select_data is not None:
                 onsets = [point['customdata'] for point in select_data['points']]
                 wavs = audio_io.read_wav_parts_from_local(path=TEMP_STORAGE + url, onsets=onsets, as_float=True)
-                wavs = np.concatenate(wavs)
             else:
-                fs, wavs = audio_io.read_wave_local(TEMP_STORAGE + url)
+                fs, wavs = audio_io.read_wave_local(TEMP_STORAGE + url, as_float=True)
 
             wavs = filters.frequency_filter(wavs, fs=SAMPLING_RATE, lowcut=lowcut, highcut=higcut)
-            fig = visualize.power_spectrum(wavs, fs=SAMPLING_RATE)
+            fig = visualize.power_spectrum(wavs, fs=SAMPLING_RATE, block_size=fft_size, scaling='spectrum', cutoff=-90)
             return dcc.Graph(id='spectrum', figure=fig)
     else:
         raise PreventUpdate
