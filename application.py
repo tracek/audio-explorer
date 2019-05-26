@@ -595,7 +595,7 @@ def update_table(select_data):
 )
 def reduce_noise(click, url, select_data):
     if url is not None and select_data is not None:
-        fs, y = audio_io.read_wave_local(TEMP_STORAGE + url)
+        fs, y = audio_io.read_wave_local(TEMP_STORAGE + url, as_float=True)
         onsets = [point['customdata'] for point in select_data['points']]
         noises = [y[int(start_s * fs): int(end_s * fs)] for start_s, end_s in onsets]
         noises = np.concatenate(noises)
