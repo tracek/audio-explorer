@@ -119,7 +119,7 @@ def get(X, fs: int, n_jobs: int=1, selected_features='all', **params) -> pd.Data
         features = pd.concat(features)
 
     features.insert(0, column='onset', value=onsets)
-    features.insert(0, column='offset', value=onsets + sample_len)
+    features.insert(1, column='offset', value=onsets + sample_len)
     features = features.reset_index(drop=True)
     return features
 

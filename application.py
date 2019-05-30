@@ -37,7 +37,7 @@ from dash.dependencies import Input, Output, State
 from dash.exceptions import PreventUpdate
 from botocore.client import Config
 
-from settings import S3_BUCKET, AWS_REGION, SERVE_LOCAL, SAMPLING_RATE, AUDIO_MARGIN, TEMP_STORAGE, AUDIO_DB
+from settings import S3_BUCKET, AWS_REGION, SERVE_LOCAL, SAMPLING_RATE, AUDIO_MARGIN, TEMP_STORAGE
 from audioexplorer.features import get, FEATURES
 from audioexplorer.embedding import get_embeddings, EMBEDDINGS
 from audioexplorer import audio_io
@@ -466,6 +466,7 @@ def plot_embeddings(filename, n_clicks, embedding_type, fftsize, bandpass, onset
             else:
                 style['color'] = 'red'
 
+            features.insert(0, 'id', features.index)
             return figure, features.round(2).to_dict(orient='rows'), msg, style
         except Exception as ex:
             style['color'] = 'red'
