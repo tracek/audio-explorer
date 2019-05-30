@@ -27,7 +27,7 @@ class OnsetDetector(object):
                  onset_detector_type: str = 'hfc',
                  onset_threshold: float = 0.01,
                  onset_silence_threshold: float = -90,
-                 min_duration_s: float = 0.15):
+                 min_duration_s: float = 0.02):
         self.hop = hop
         self.onset_detector = onset(onset_detector_type, nfft, hop, fs)
         if onset_threshold:
