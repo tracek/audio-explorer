@@ -68,7 +68,7 @@ def convert_to_wav(input_path: str, output_path: str, convert_always=False):
     logging.info(f'Entering convert_to_wav with input: {input_path} to {output_path}')
     if not os.path.isfile(input_path):
         raise Exception(f'Input path {input_path} is not there!')
-    if is_conversion_required(input_path) or convert_always:
+    if convert_always or is_conversion_required(input_path):
         tfm = sox.Transformer()
         tfm.set_globals(dither=True)
         tfm.rate(samplerate=16000)
