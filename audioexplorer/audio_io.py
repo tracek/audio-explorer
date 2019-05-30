@@ -68,6 +68,10 @@ def convert_to_wav(input_path: str, output_path: str, convert_always=False):
     logging.info(f'Entering convert_to_wav with input: {input_path} to {output_path}')
     if not os.path.isfile(input_path):
         raise Exception(f'Input path {input_path} is not there!')
+    try:
+        sample = read_wav_part_from_local(input_path, start_s=0, end_s=1)
+    except Exception:
+        logging.exception('Fatal error while reading sample from %s', input_path)
     if convert_always or is_conversion_required(input_path):
         tfm = sox.Transformer()
         tfm.set_globals(dither=True)
@@ -139,7 +143,7 @@ def read_wav_parts_from_local(path: str, onsets: list, dtype = 'int16', as_float
             wav_bytes = wavread.readframes(sample_len)
             wav_array = np.frombuffer(wav_bytes, dtype=dtype)
             if normalise_db:
-                wav_array = normalise_wav(wav_array, normalise_db, as_float=as_float)
+                wav_array = normalise_wav(wav_array, normalise_db)
             wavs.append(wav_array)
 
     wavs = np.concatenate(wavs)
@@ -152,7 +156,8 @@ def read_wav_parts_from_local(path: str, onsets: list, dtype = 'int16', as_float
     return wavs
 
 
-def read_wav_part_from_local(path: str, start_s: float, end_s: float, dtype = 'int16', as_float=False, normalise_db=None):
+def read_wav_part_from_local(path: str, start_s: float, end_s: float, dtype = 'int16', as_float=False,
+                             normalise_db=None) -> np.ndarray:
     with wave.open(path, mode='rb') as wavread:
         fs = wavread.getframerate()
         start = int(start_s * fs)
