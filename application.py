@@ -48,6 +48,7 @@ from audioexplorer import filters
 if SERVE_LOCAL: # Play audio from the local machine
     import simpleaudio as sa
 
+
 app = dash.Dash(__name__, external_stylesheets=['https://codepen.io/chriddyp/pen/bWLwgP.css',
                                                 "https://codepen.io/chriddyp/pen/brPBPO.css"])
 app.config['suppress_callback_exceptions']=True
