@@ -524,7 +524,10 @@ def display_click_image(click_data, select_data, n_clicks, url, bandpass, fft_si
         else:
             if select_data is not None:
                 onsets = [point['customdata'] for point in select_data['points']]
-                wavs = audio_io.read_wav_parts_from_local(path=TEMP_STORAGE + url, onsets=onsets, as_float=True)
+                if onsets:
+                    wavs = audio_io.read_wav_parts_from_local(path=TEMP_STORAGE + url, onsets=onsets, as_float=True)
+                else:
+                    raise PreventUpdate
             else:
                 fs, wavs = audio_io.read_wave_local(TEMP_STORAGE + url, as_float=True)
 
