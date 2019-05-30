@@ -152,7 +152,7 @@ def read_wav_parts_from_local(path: str, onsets: list, dtype = 'int16', as_float
     return wavs
 
 
-def read_wav_part_from_local(path: str, start_s: int, end_s: int, dtype = 'int16', as_float=False, normalise_db=None):
+def read_wav_part_from_local(path: str, start_s: float, end_s: float, dtype = 'int16', as_float=False, normalise_db=None):
     with wave.open(path, mode='rb') as wavread:
         fs = wavread.getframerate()
         start = int(start_s * fs)
@@ -162,7 +162,13 @@ def read_wav_part_from_local(path: str, start_s: int, end_s: int, dtype = 'int16
         wav_bytes = wavread.readframes(sample_len)
         wav_array = np.frombuffer(wav_bytes, dtype=dtype)
         if normalise_db:
-            wav_array = normalise_wav(wav_array, db=normalise_db, as_float=as_float)
+            wav_array = normalise_wav(wav_array, db=normalise_db)
+
+    if as_float:
+        wav_array = wav_array / (2**15-1)
+    else:
+        wav_array = wav_array.astype('int16')
+
 
     return wav_array
 
