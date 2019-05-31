@@ -644,7 +644,7 @@ def generate_layout():
                                     html.Div(className='seven columns', children=[
                                         dcc.Input(id='input-filename', type='text', debounce=True,
                                                   placeholder='Filename',
-                                                  style={'display': 'inline-block', 'width': '340px',
+                                                  style={'display': 'inline-block', 'width': '300px',
                                                          'margin-right': '30px'}),
                                         html.Div(id='div-download-explore',
                                                  style={'display': 'inline-block', 'margin-right': '60px'}),
