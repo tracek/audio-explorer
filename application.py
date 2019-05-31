@@ -37,7 +37,7 @@ from dash.dependencies import Input, Output, State
 from dash.exceptions import PreventUpdate
 from botocore.client import Config
 
-from settings import S3_BUCKET, AWS_REGION, SERVE_LOCAL, SAMPLING_RATE, AUDIO_MARGIN, TEMP_STORAGE, AUDIO_DB
+from settings import S3_BUCKET, AWS_REGION, SERVE_LOCAL, SAMPLING_RATE, AUDIO_MARGIN, TEMP_STORAGE
 from audioexplorer.features import get, FEATURES
 from audioexplorer.embedding import get_embeddings, EMBEDDINGS
 from audioexplorer import audio_io
@@ -47,6 +47,7 @@ from audioexplorer import filters
 
 if SERVE_LOCAL: # Play audio from the local machine
     import simpleaudio as sa
+
 
 app = dash.Dash(__name__, external_stylesheets=['https://codepen.io/chriddyp/pen/bWLwgP.css',
                                                 "https://codepen.io/chriddyp/pen/brPBPO.css"])
@@ -134,7 +135,7 @@ def resolve_filtering_expression(df: pd.DataFrame, filter_expression: str):
     match = re.search('|'.join(ops.keys()), filter_expression)
     if match:
         operator_s = filter_expression[match.start(): match.end()]
-        col_name = filter_expression[:match.start()].replace('\"', '').replace(' ', '')
+        col_name = filter_expression[:match.start()].replace('\"', '').replace(' ', '').strip('{}')
         filter_value = float(filter_expression[match.end() + 1:])
         condition = ops[operator_s](df[col_name], filter_value)
     return condition
@@ -215,10 +216,10 @@ def show_features_in_table(data):
         pagination_settings={'page_size': 20, 'current_page': 0},
         pagination_mode='be',
         filtering='be',
-        filtering_settings='',
+        filter='',
         sorting='be',
         sorting_type='multi',
-        sorting_settings=[]
+        sort_by=[]
     )
     return feature_table
 
@@ -227,10 +228,10 @@ def show_features_in_table(data):
              [Input('feature-store', 'data'),
               Input('embedding-graph', 'selectedData'),
               Input('features-table', "pagination_settings"),
-              Input('features-table', "sorting_settings"),
-              Input('features-table', "filtering_settings")])
-def update_table(data, select_data, pagination_settings, sorting_settings, filtering_settings):
-    filtering_expressions = filtering_settings.split(' && ')
+              Input('features-table', 'sort_by'),
+              Input('features-table', 'filter')])
+def update_table(data, select_data, pagination_settings, sort_by, filter):
+    filtering_expressions = filter.split(' && ')
     df = pd.DataFrame(data)
     if select_data:
         selected_points = [point['pointIndex'] for point in select_data['points']]
@@ -240,12 +241,12 @@ def update_table(data, select_data, pagination_settings, sorting_settings, filte
         if condition is not None:
             df = df.loc[condition]
 
-    if len(sorting_settings):
+    if len(sort_by):
         df = df.sort_values(
-            [col['column_id'] for col in sorting_settings],
+            [col['column_id'] for col in sort_by],
             ascending=[
                 col['direction'] == 'asc'
-                for col in sorting_settings
+                for col in sort_by
             ],
             inplace=False
         )
@@ -466,6 +467,7 @@ def plot_embeddings(filename, n_clicks, embedding_type, fftsize, bandpass, onset
             else:
                 style['color'] = 'red'
 
+            features.insert(0, 'id', features.index)
             return figure, features.round(2).to_dict(orient='rows'), msg, style
         except Exception as ex:
             style['color'] = 'red'
@@ -524,7 +526,10 @@ def display_click_image(click_data, select_data, n_clicks, url, bandpass, fft_si
         else:
             if select_data is not None:
                 onsets = [point['customdata'] for point in select_data['points']]
-                wavs = audio_io.read_wav_parts_from_local(path=TEMP_STORAGE + url, onsets=onsets, as_float=True)
+                if onsets:
+                    wavs = audio_io.read_wav_parts_from_local(path=TEMP_STORAGE + url, onsets=onsets, as_float=True)
+                else:
+                    raise PreventUpdate
             else:
                 fs, wavs = audio_io.read_wave_local(TEMP_STORAGE + url, as_float=True)
 

@@ -56,7 +56,7 @@ class FeatureExtractor(object):
         if 'pitch' in self.selected_features:
             hop = self.step_size // 2
             pitch_stats = pitchprop.get_pitch_stats_series(sample, self.fs, block_size=self.block_size, hop=hop,
-                                                           tolerance=0.2)
+                                                           tolerance=0.4)
             computed_features.append(pitch_stats)
         if self.yaafe:
             yaafe_features = self.yaafe.get_mean_features_as_series(sample)
@@ -118,8 +118,8 @@ def get(X, fs: int, n_jobs: int=1, selected_features='all', **params) -> pd.Data
             for chunk in chunks)
         features = pd.concat(features)
 
-    features.insert(0, column='offset', value=onsets + sample_len)
     features.insert(0, column='onset', value=onsets)
+    features.insert(1, column='offset', value=onsets + sample_len)
     features = features.reset_index(drop=True)
     return features
 

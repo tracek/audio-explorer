@@ -61,6 +61,8 @@ Solution:
 - Use EC2 that has a drive with sufficient space (mind most of EC2 uses EBS volumes)
 - Follow instructions from [Server Fault](https://serverfault.com/questions/840937/aws-elasticbeanstalk-docker-thin-pool-getting-full-and-causing-re-mount-of-files)
 
+The latter comes recommended, as default thin pool is ~12 GB, which is not enough for Audio Explorer. Bumping it to 40 GB is a good choice - that's why we have `.ebextensions/04_docker.config`.
+
 ## Pull Request Guidelines
 
 Use the [GitHub flow](https://guides.github.com/introduction/flow/) when proposing contributions to this repository (i.e. create a feature branch and submit a PR against the master branch). How to create pull request is discussed [here](https://help.github.com/en/articles/creating-a-pull-request). 
