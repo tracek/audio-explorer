@@ -27,11 +27,11 @@ dependencies:
   - psycopg2=2.8.2
   - pip=19.1.1
   - markdown=3.1
-  - testpath<4
+  - testpath=0.3.1
   - PyYAML<5
   - hdf5=1.10.2
   - yaafe=0.70=py36h0bee7d0_1
-  - pytables=3.4.3=py36h02b9ad4_2
+  - pytables=3.4.4=py36h5ca999c_0
   - pip:
     - awsebcli
     - dash_audio_components
