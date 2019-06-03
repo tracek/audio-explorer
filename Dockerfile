@@ -29,7 +29,7 @@ RUN pip install --no-cache-dir httpagentparser \
     noisereduce \
     sox==1.3.7 \
     dash==0.43 \
-    dash-table==3.6.0
+    dash-table==3.7.0
 
 COPY . /app
 WORKDIR /app
