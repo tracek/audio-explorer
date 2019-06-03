@@ -689,7 +689,7 @@ def generate_layout():
                                 dcc.Checklist(
                                     id='features-selection',
                                     options=[{'label': label, 'value': value} for value, label in FEATURES.items()],
-                                    values=['freq'],
+                                    values=['pitch'],
                                     labelStyle={'display': 'inline-block', 'margin': '6px'}
                                 ),
                                 named_slider(
