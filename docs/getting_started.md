@@ -73,10 +73,16 @@ The scatter plot is the result of running the dimensionality reduction algorithm
 
 Once file is uploaded, spectrum of the audio will be plotted in lower right corner. 
 
+Spectrum             |  Spectrogram
+:-------------------------:|:-------------------------:
+![](img/spectrum.png)  |  ![](img/spectrogram.png )
+
+
+
 * Select number of points and spectrum will be plotted only for the given points.
 * Click on a single point and a spectrogram will be plotted. A spectrogram is a visual representation of the spectrum of frequencies of a signal as it varies with time. 
  
- Spectrogram allows further verification of similarity between samples as well as provide insights into frequency structure of the signal. Plotted spectrogram has an extra margin of 0.05 second from both ends to enable better inspection. The extra margin is not considered during the analysis and is visible as a thin black line.
+ Spectrogram allows for further verification of similarity between samples as well as provide insights into frequency structure of the signal. Plotted spectrogram has an extra margin of 0.05 second from both ends to enable better inspection. The extra margin is not considered during the analysis and is visible as a thin black line.
 
 ##### Tip
 
