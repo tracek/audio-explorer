@@ -109,9 +109,13 @@ Adjust the settings and hit *Apply*.
 
 ## Profile
 
+![spectrogramfull](img/spectrogram_long.png)
+
 That's where you can see a spectrogram of the complete audio. If you mark any points on the main graph, these will be highlighted on the spectrogram in light red. You can zoom in the graph by holding left mouse button and dragging selection over area of interest.
 
 ## Table
+
+![table](img/table.png)
 
 In this section you can inspect all features as a table. Features can be sorted and filtered. You can use the following expressions: `<=`, `<`, `>=` and `>`, e.g. `> 2000`.
 
