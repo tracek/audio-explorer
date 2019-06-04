@@ -685,7 +685,6 @@ def generate_layout():
                                     placeholder='Select embedding',
                                     value='umap'
                                 ),
-                                html.H4('Parameters'),
                                 dcc.Checklist(
                                     id='features-selection',
                                     options=[{'label': label, 'value': value} for value, label in FEATURES.items()],
