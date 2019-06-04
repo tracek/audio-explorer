@@ -9,6 +9,7 @@ nav:
   - Home: index.md
   - getting_started.md
   - audio_embedding.md
+  - case_storm_petrels.md
   - command_line.md
   - developer_notes.md
   - faq.md
