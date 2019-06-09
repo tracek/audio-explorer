@@ -796,7 +796,7 @@ def generate_layout():
                     )
                 ),
             ]),
-            dcc.Tab(label='About', children=[
+            dcc.Tab(label='Help', children=[
                 html.Div(
                     style={
                         'width': '75%',
