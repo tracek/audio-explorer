@@ -484,6 +484,9 @@ def plot_embeddings(filename, n_clicks, embedding_type, fftsize, bandpass, onset
 def update_player_status(click_data, url):
     if click_data:
         start, end = click_data['points'][0]['customdata']
+        ugly_hack = np.random.randint(low=-99, high=99) / 10000
+        start += ugly_hack
+        end += ugly_hack
         if SERVE_LOCAL:
             wav = audio_io.read_wav_part_from_local(url, start - AUDIO_MARGIN, end + AUDIO_MARGIN, as_float=False)
             sa.play_buffer(wav, 1, 2, SAMPLING_RATE)
