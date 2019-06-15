@@ -68,10 +68,6 @@ def convert_to_wav(input_path: str, output_path: str, convert_always=False):
     logging.info(f'Entering convert_to_wav with input: {input_path} to {output_path}')
     if not os.path.isfile(input_path):
         raise Exception(f'Input path {input_path} is not there!')
-    try:
-        sample = read_wav_part_from_local(input_path, start_s=0, end_s=1)
-    except Exception:
-        logging.exception('Fatal error while reading sample from %s', input_path)
     if convert_always or is_conversion_required(input_path):
         tfm = sox.Transformer()
         tfm.set_globals(dither=True)
