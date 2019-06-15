@@ -453,14 +453,16 @@ def plot_embeddings(filename, n_clicks, embedding_type, fftsize, bandpass, onset
             # features.insert(0, column='filename', value=filenames[-1])
             extra_data = ['onset', 'offset']
             if 'freq_mean' in features:
-                mean_freq = features['freq_mean'].astype(int).astype(str) + ' Hz'
+                mean_freq = features['freq_mean'].astype(int).astype(str) + ' Hz<br>'
             elif 'pitch_median' in features:
-                mean_freq = features['pitch_median'].astype(int).astype(str) + ' Hz'
+                mean_freq = features['pitch_median'].astype(int).astype(str) + ' Hz<br>'
             else:
-                mean_freq = None
+                mean_freq = ''
+            interval = features['onset'].round(2).astype(str) + ' - ' + features['offset'].round(2).astype(str) + 's'
+            text = mean_freq + interval
             figure = visualize.scatter_plot(x=embeddings[:, 0], y=embeddings[:, 1],
                                             customdata=features[extra_data],
-                                            text=mean_freq)
+                                            text=text)
 
             if msg is None:
                 msg = f'Found {len(embeddings)} samples'
@@ -500,8 +502,8 @@ def update_player_status(click_data, url):
                Input('embedding-graph', 'selectedData'),
                Input('apply-button', 'n_clicks'),
                Input('filename-store', 'data')],
-               [State('bandpass', 'value'),
-                State('fft-size', 'value')])
+              [State('bandpass', 'value'),
+               State('fft-size', 'value')])
 def display_click_image(click_data, select_data, n_clicks, url, bandpass, fft_size):
     if url:
         lowcut, higcut = bandpass
