@@ -27,5 +27,10 @@ The recordings from St Helena consist of over 500h of data recorded in stereo wi
 
 THIS SECTION WILL BE EXPANDED SHORTLY
 
-Having quality labels is crucial to enable successful supervised machine learning. Audio Explorer enabled us to label in 2 hours over 200 hours of recordings. ~50h was then used for training and validation, while rest for testing.  
+Having quality labels is crucial to enable successful supervised machine learning. Audio Explorer enabled us to label in 2 hours over 200 hours of recordings. ~50h was then used for training and validation, while rest for testing.
 
+The results are very promising: ~99% accuracy. It should be attributed partially to the fact that the case was not complicated, there are not many sounds that can confuse the algorithm. The only "competition" to storm petrels make brown noddy.
+
+Here's the ROC:
+
+<iframe width="900" height="800" frameborder="0" scrolling="no" src="//plot.ly/~tracewsl/339.embed"></iframe
