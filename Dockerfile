@@ -23,7 +23,7 @@ RUN conda install -c conda-forge --quiet --yes \
 
 RUN pip install --no-cache-dir httpagentparser \
     ipinfo \
-    simpleaudio
+    simpleaudio \
     dash_audio_components \
     dash_upload_components \
     noisereduce \
