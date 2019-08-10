@@ -1,5 +1,6 @@
 import os
 from dotenv import load_dotenv
+from distutils.util import strtobool
 
 load_dotenv()
 
@@ -15,7 +16,7 @@ S3_BUCKET = 'audioexplorer'
 S3_STREAMED = f'https://s3.eu-central-1.amazonaws.com/{S3_BUCKET}/'
 AWS_REGION = 'eu-central-1'
 
-SERVE_LOCAL = os.getenv('LOCAL', False)
+SERVE_LOCAL = strtobool(os.getenv('LOCAL', 'False'))
 
 SAMPLING_RATE = 16000 # All audio will be resampled to this frequency
 AUDIO_MARGIN = 0.05 # Margin applied to start and end of the audio to make it longer and improve UX. Not applied to any calculations.
