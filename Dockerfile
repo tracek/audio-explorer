@@ -21,15 +21,14 @@ RUN conda install -c conda-forge --quiet --yes \
     datashader=0.7.0 \
     gunicorn=19.9.0
 
-
 RUN pip install --no-cache-dir httpagentparser \
     ipinfo \
+    simpleaudio
     dash_audio_components \
     dash_upload_components \
     noisereduce \
     sox==1.3.7 \
-    dash==0.43 \
-    dash-table==3.7.0
+    dash==1.1.1
 
 COPY . /app
 WORKDIR /app
