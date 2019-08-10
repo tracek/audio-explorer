@@ -21,3 +21,6 @@ coverage.xml
 *.log
 .git
 data/*
+.ebextensions/
+.elasticbeanstalk/
+.idea/
