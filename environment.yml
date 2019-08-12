@@ -28,11 +28,11 @@ dependencies:
   - PyYAML=5.1.2
   - hdf5=1.10.2
   - yaafe=0.70=py36h0bee7d0_1
-  - pytables=3.4.4=py36ha205bf6_0
+  - pytables=3.4.4=py36h13cba08_0
   - xgboost=0.90
   - s3fs=0.3.1
   - pip:
-      - dash=1.1.1
+      - dash==1.1.1
       - dash_audio_components
       - dash_upload_components
       - sox
