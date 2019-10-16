@@ -213,12 +213,13 @@ def show_features_in_table(data):
         id='features-table',
         columns=[{'name': i, 'id': i} for i in data[0].keys()],
         data=data,
-        pagination_settings={'page_size': 20, 'current_page': 0},
-        pagination_mode='be',
-        filtering='be',
-        filter='',
-        sorting='be',
-        sorting_type='multi',
+        page_current=0,
+        page_size=20,
+        page_action='custom',
+        filter_action='custom',
+        filter_query='',
+        sort_action='custom',
+        sort_mode='multi',
         sort_by=[]
     )
     return feature_table
@@ -227,11 +228,12 @@ def show_features_in_table(data):
 @app.callback(Output('features-table', "data"),
              [Input('feature-store', 'data'),
               Input('embedding-graph', 'selectedData'),
-              Input('features-table', "pagination_settings"),
+              Input('features-table', "page_current"),
+              Input('features-table', "page_size"),
               Input('features-table', 'sort_by'),
-              Input('features-table', 'filter')])
-def update_table(data, select_data, pagination_settings, sort_by, filter):
-    filtering_expressions = filter.split(' && ')
+              Input('features-table', 'filter_query')])
+def update_table(data, select_data, page_current, page_size, sort_by, filter_query):
+    filtering_expressions = filter_query.split(' && ')
     df = pd.DataFrame(data)
     if select_data:
         selected_points = [point['pointIndex'] for point in select_data['points']]
@@ -251,10 +253,8 @@ def update_table(data, select_data, pagination_settings, sort_by, filter):
             inplace=False
         )
 
-    return df.iloc[
-        pagination_settings['current_page']*pagination_settings['page_size']:
-        (pagination_settings['current_page'] + 1)*pagination_settings['page_size']
-    ].to_dict('records')
+    df = df.iloc[page_current * page_size: (page_current + 1) * page_size ].to_dict('records')
+    return df
 
 
 @app.callback(Output('div-download-table', 'children'),
@@ -373,7 +373,7 @@ def convert(mapping):
               State('bandpass', 'value'),
               State('onset-threshold', 'value'),
               State('sample-len', 'value'),
-              State('features-selection', 'values'),
+              State('features-selection', 'value'),
               State('sessionid-store', 'data')])
 def log_user_action_cb(mapping, apply_clicks, embedding_type, fftsize, bandpass, onset_threshold, sample_len,
                        selected_features, session_id):
@@ -427,7 +427,7 @@ def upload_to_s3(filename):
                State('onset-threshold', 'value'),
                State('sample-len', 'value'),
                State('embedding-neighbours', 'value'),
-               State('features-selection', 'values')])
+               State('features-selection', 'value')])
 def plot_embeddings(filename, n_clicks, embedding_type, fftsize, bandpass, onset_threshold, sample_len,
                     neighbours, selected_features):
     if filename is not None:
@@ -437,7 +437,7 @@ def plot_embeddings(filename, n_clicks, embedding_type, fftsize, bandpass, onset
         fs, X = audio_io.read_wave_local(filepath, as_float=True)
         features = get(X, fs, n_jobs=1, selected_features=selected_features, lowcut=lowpass, highcut=highpass,
                        block_size=fftsize, onset_detector_type='hfc', onset_silence_threshold=-90,
-                       onset_threshold=onset_threshold, min_duration_s=min_duration,    sample_len=sample_len)
+                       onset_threshold=onset_threshold, min_duration_s=min_duration, sample_len=sample_len)
 
         params = map_parameters(embedding_type, neighbours)
 
