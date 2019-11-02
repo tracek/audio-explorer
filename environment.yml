@@ -39,5 +39,5 @@ dependencies:
       - noisereduce==1.0.1
       - mkdocs-material==4.4.3
       - httpagentparser==1.9.0
-      - ipinfo==2.1.0
+      - ipinfo==3.0.0
       - simpleaudio==1.0.2

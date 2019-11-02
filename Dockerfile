@@ -23,10 +23,10 @@ RUN conda install -c conda-forge --quiet --yes \
     gunicorn=19.9.0
 
 RUN pip install --no-cache-dir httpagentparser==1.9.0 \
-    ipinfo==2.1.0 \
+    ipinfo==3.0.0 \
     noisereduce==1.0.1 \
     sox==1.3.7 \
-    dash==1.4 \
+    dash==1.4.1 \
     dash_audio_components \
     dash_upload_components
 
