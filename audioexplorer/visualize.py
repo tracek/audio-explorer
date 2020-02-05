@@ -31,6 +31,9 @@ from scipy import signal
 from numpy.lib.stride_tricks import as_strided
 from audioexplorer import yaafe_wrapper
 
+import plotly.io as pio
+pio.templates.default = "none"
+
 
 def scatter_plot(x, y, customdata=None, text=None, opacity=0.8) -> go.Figure:
 
