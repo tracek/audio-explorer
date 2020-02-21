@@ -1,6 +1,6 @@
 # About
 
-Hi, I'm Lukasz! I am a software engineer and scientist.
+Hi, I'm Lukasz! I am a software engineer and scientist, founder of Datana Solutions.
 
 ![myimg](https://i.imgur.com/p1mCb7p.jpg)
 
@@ -12,12 +12,5 @@ Manual labelling of audio is time consuming and error prone. With this tool we a
 ## How do we achieve that?
 
 The program computes audio features per short fragments of submitted audio piece and then finds projection to 2-dimensional space by using linear or [non-linear dimensionality reduction](https://en.wikipedia.org/wiki/Nonlinear_dimensionality_reduction). Audio fragments are then represented as points; similar sample will be close together, while those which are different further apart. 
-
-## Acknowledgement
-
-My special thanks to:
-
-* AWS Cloud Credits for Research for supporting the project! Thanks to AWS I could rapidly prototype the models and the app itself. 
-* My colleagues from RSPB who have supplied the audio recordings and supported along the way.
 
 Cheers!
