@@ -1,6 +1,6 @@
 # About
 
-Hi, I'm Lukasz! I am a software engineer and scientist, founder of Datana Solutions.
+Hi, I'm Lukasz! I am a software engineer and scientist.
 
 ![myimg](https://i.imgur.com/p1mCb7p.jpg)
 
