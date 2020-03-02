@@ -1,6 +1,6 @@
 ## Audio Explorer
 
-[Audio Explorer](http://audioexplorer.online) helps in audio data discovery and labelling by utilising unsupervised machine learning, statistics and digital signal processing.
+[Audio Explorer](https://dash-gallery.plotly.host/audio-explorer/) helps in audio data discovery and labelling by utilising unsupervised machine learning, statistics and digital signal processing.
 
 The program computes audio features per short fragments of submitted audio piece and then finds projection to 2-dimensional space by using linear or [non-linear dimensionality reduction](https://en.wikipedia.org/wiki/Nonlinear_dimensionality_reduction). Audio fragments are then represented as points; similar sample will be close together, while those which are different further apart. User can click on a point to play the audio fragment and inspect resulting [spectrogram](https://en.wikipedia.org/wiki/Spectrogram). 
 
